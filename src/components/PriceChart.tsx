@@ -10,7 +10,12 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   BarChart,
-  Bar
+  Bar,
+  ComposedChart,
+  Line,
+  Scatter,
+  CandlestickChart,
+  Candlestick
 } from "recharts";
 
 // Mock data for candlestick chart
@@ -48,9 +53,10 @@ const generateMockCandlestickData = (days: number = 30) => {
 interface PriceChartProps {
   symbol: string;
   interval: string;
+  chartType: "candlestick" | "line";
 }
 
-const PriceChart = ({ symbol, interval }: PriceChartProps) => {
+const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   const [data, setData] = useState(generateMockCandlestickData());
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   
@@ -130,63 +136,105 @@ const PriceChart = ({ symbol, interval }: PriceChartProps) => {
 
       <div className="h-[70%]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={data}
-            margin={{ top: 50, right: 30, left: 20, bottom: 5 }}
-          >
-            <defs>
-              <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorPrediction" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis 
-              dataKey="date" 
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
-              axisLine={{ stroke: '#1e293b' }}
-              tickLine={{ stroke: '#1e293b' }}
-            />
-            <YAxis 
-              domain={['auto', 'auto']} 
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
-              axisLine={{ stroke: '#1e293b' }}
-              tickLine={{ stroke: '#1e293b' }}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area 
-              type="monotone" 
-              dataKey="close" 
-              stroke="#3b82f6" 
-              fillOpacity={1} 
-              fill="url(#colorClose)" 
-            />
-            <Area 
-              type="monotone" 
-              dataKey="prediction" 
-              stroke="#6366f1"
-              strokeDasharray="5 5" 
-              fillOpacity={1} 
-              fill="url(#colorPrediction)" 
-            />
-            {currentPrice && (
-              <ReferenceLine 
-                y={currentPrice} 
-                stroke="#94a3b8" 
-                strokeDasharray="3 3" 
-                label={{ 
-                  value: `$${currentPrice.toFixed(2)}`,
-                  position: 'right',
-                  fill: '#94a3b8',
-                  fontSize: 10,
-                }} 
+          {chartType === "line" ? (
+            <AreaChart
+              data={data}
+              margin={{ top: 50, right: 30, left: 20, bottom: 5 }}
+            >
+              <defs>
+                <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorPrediction" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                axisLine={{ stroke: '#1e293b' }}
+                tickLine={{ stroke: '#1e293b' }}
               />
-            )}
-          </AreaChart>
+              <YAxis 
+                domain={['auto', 'auto']} 
+                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                axisLine={{ stroke: '#1e293b' }}
+                tickLine={{ stroke: '#1e293b' }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area 
+                type="monotone" 
+                dataKey="close" 
+                stroke="#3b82f6" 
+                fillOpacity={1} 
+                fill="url(#colorClose)" 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="prediction" 
+                stroke="#6366f1"
+                strokeDasharray="5 5" 
+                fillOpacity={1} 
+                fill="url(#colorPrediction)" 
+              />
+              {currentPrice && (
+                <ReferenceLine 
+                  y={currentPrice} 
+                  stroke="#94a3b8" 
+                  strokeDasharray="3 3" 
+                  label={{ 
+                    value: `$${currentPrice.toFixed(2)}`,
+                    position: 'right',
+                    fill: '#94a3b8',
+                    fontSize: 10,
+                  }} 
+                />
+              )}
+            </AreaChart>
+          ) : (
+            <CandlestickChart
+              data={data}
+              margin={{ top: 50, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                axisLine={{ stroke: '#1e293b' }}
+                tickLine={{ stroke: '#1e293b' }}
+              />
+              <YAxis 
+                domain={['auto', 'auto']} 
+                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                axisLine={{ stroke: '#1e293b' }}
+                tickLine={{ stroke: '#1e293b' }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Candlestick
+                fill="#22c55e"
+                stroke="#22c55e"
+                wickStroke="#22c55e"
+                yAccessor={(data) => [data.open, data.high, data.low, data.close]}
+                className="[&_.recharts-rectangle:has([fill='#22c55e'])]:fill-green-500 [&_.recharts-rectangle:has([fill='#ef4444'])]:fill-red-500"
+              />
+              {currentPrice && (
+                <ReferenceLine 
+                  y={currentPrice} 
+                  stroke="#94a3b8" 
+                  strokeDasharray="3 3" 
+                  label={{ 
+                    value: `$${currentPrice.toFixed(2)}`,
+                    position: 'right',
+                    fill: '#94a3b8',
+                    fontSize: 10,
+                  }} 
+                />
+              )}
+            </CandlestickChart>
+          )}
         </ResponsiveContainer>
       </div>
 
