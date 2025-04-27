@@ -89,6 +89,27 @@ const CandlestickShape = (props: any) => {
   );
 };
 
+// Custom component to render candlesticks
+const CustomCandlestickItem = (props: any) => {
+  const { x, y, index, payload, width } = props;
+  
+  // Spacing between candlesticks
+  const candleWidth = 20;
+  const xPos = x - (candleWidth / 2); // Center the candle
+  
+  return (
+    <CandlestickShape
+      key={`candle-${index}`}
+      x={xPos}
+      width={candleWidth}
+      open={payload.open}
+      close={payload.close}
+      high={payload.high}
+      low={payload.low}
+    />
+  );
+};
+
 const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   const [data, setData] = useState(generateMockCandlestickData());
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -247,19 +268,16 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               />
               <Tooltip content={<CustomTooltip />} />
               {data.map((entry, index) => (
-                <Rectangle
+                <Scatter
                   key={`candle-${index}`}
-                  x={index * 40 + 20}
-                  y={0}
-                  width={20}
-                  height={0}
-                  dataKey="none"
-                  shape={<CandlestickShape 
-                    open={entry.open} 
-                    close={entry.close} 
-                    high={entry.high} 
-                    low={entry.low} 
-                  />}
+                  data={[entry]}
+                  fill="none"
+                  shape={
+                    <CustomCandlestickItem 
+                      index={index} 
+                      payload={entry}
+                    />
+                  }
                 />
               ))}
               {currentPrice && (
