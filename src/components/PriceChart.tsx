@@ -169,7 +169,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
 
   return (
     <div className="w-full h-[500px] chart-container">
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 z-10 mb-12">
         <h3 className="text-lg font-bold">{symbol}</h3>
         {currentPrice && (
           <p className="text-2xl font-mono font-semibold">
@@ -188,7 +188,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         </p>
       </div>
 
-      <div className="h-[70%]">
+      <div className="h-[70%] mt-16"> {/* Added margin-top to prevent overlap */}
         <ResponsiveContainer width="100%" height="100%">
           {chartType === "line" ? (
             <AreaChart

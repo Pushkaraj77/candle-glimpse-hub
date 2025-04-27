@@ -24,6 +24,7 @@ const Index = () => {
     changePercent: 0.35
   });
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showWatchlist, setShowWatchlist] = useState(true);
 
   const handleSearch = (query: string) => {
     console.log("Searching for:", query);
@@ -50,9 +51,30 @@ const Index = () => {
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden">
         {/* Left Panel */}
-        <div className="w-[300px] border-r border-border p-4 flex flex-col">
-          <h2 className="text-lg font-semibold mb-3">Watchlist</h2>
-          <SymbolList onSelectSymbol={handleSelectSymbol} />
+        <div className={`transition-all duration-300 ease-in-out ${showWatchlist ? 'w-[300px]' : 'w-[50px]'} border-r border-border p-4 flex flex-col`}>
+          {showWatchlist ? (
+            <>
+              <h2 className="text-lg font-semibold mb-3">Watchlist</h2>
+              <SymbolList onSelectSymbol={handleSelectSymbol} />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mt-4 self-end"
+                onClick={() => setShowWatchlist(false)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="self-center"
+              onClick={() => setShowWatchlist(true)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Chart Panel */}

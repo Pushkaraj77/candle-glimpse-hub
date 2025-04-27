@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ArrowUp, ArrowDown, ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -67,7 +68,7 @@ const SymbolList = ({ onSelectSymbol }: SymbolListProps) => {
               <div className="font-mono font-medium">{symbol.symbol}</div>
               <div className="truncate">{symbol.name}</div>
               <div className="text-right font-mono">{symbol.price.toFixed(2)}</div>
-              <div className={`text-right font-mono flex items-center justify-end ${symbol.change >= 0 ? 'trend-up' : 'trend-down'}`}>
+              <div className={`text-right font-mono flex items-center justify-end ${symbol.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {symbol.change >= 0 ? (
                   <ArrowUp className="h-3 w-3 mr-1" />
                 ) : (
