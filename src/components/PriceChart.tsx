@@ -14,8 +14,7 @@ import {
   ComposedChart,
   Line,
   Scatter,
-  CandlestickChart,
-  Candlestick
+  Rectangle
 } from "recharts";
 
 // Mock data for candlestick chart
@@ -56,6 +55,40 @@ interface PriceChartProps {
   chartType: "candlestick" | "line";
 }
 
+// Custom candlestick shape for recharts
+const CandlestickShape = (props: any) => {
+  const { x, y, width, height, open, close, low, high } = props;
+  
+  const isRising = close > open;
+  const color = isRising ? "#22c55e" : "#ef4444";
+  const bodyHeight = Math.abs(open - close);
+  const bodyY = isRising ? close : open;
+
+  // Draw a thin line from low to high
+  return (
+    <g>
+      {/* Wick line from low to high */}
+      <line
+        x1={x + width / 2}
+        y1={low}
+        x2={x + width / 2}
+        y2={high}
+        stroke={color}
+        strokeWidth={1}
+      />
+      {/* Body rectangle from open to close */}
+      <rect
+        x={x}
+        y={bodyY}
+        width={width}
+        height={bodyHeight}
+        fill={color}
+        stroke={color}
+      />
+    </g>
+  );
+};
+
 const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   const [data, setData] = useState(generateMockCandlestickData());
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -64,11 +97,11 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   useEffect(() => {
     // In a real app, we would fetch real data here based on symbol and interval
     setData(generateMockCandlestickData(interval === '1d' ? 30 : 
-                                        interval === '1w' ? 60 : 
-                                        interval === '1m' ? 90 : 
-                                        interval === '3m' ? 120 : 
-                                        interval === '6m' ? 180 : 
-                                        interval === '1y' ? 250 : 365));
+                                       interval === '1w' ? 60 : 
+                                       interval === '1m' ? 90 : 
+                                       interval === '3m' ? 120 : 
+                                       interval === '6m' ? 180 : 
+                                       interval === '1y' ? 250 : 365));
     
     if (data.length > 0) {
       setCurrentPrice(data[data.length - 1].close);
@@ -195,7 +228,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               )}
             </AreaChart>
           ) : (
-            <CandlestickChart
+            <ComposedChart
               data={data}
               margin={{ top: 50, right: 30, left: 20, bottom: 5 }}
             >
@@ -213,13 +246,22 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                 tickLine={{ stroke: '#1e293b' }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Candlestick
-                fill="#22c55e"
-                stroke="#22c55e"
-                wickStroke="#22c55e"
-                yAccessor={(data) => [data.open, data.high, data.low, data.close]}
-                className="[&_.recharts-rectangle:has([fill='#22c55e'])]:fill-green-500 [&_.recharts-rectangle:has([fill='#ef4444'])]:fill-red-500"
-              />
+              {data.map((entry, index) => (
+                <Rectangle
+                  key={`candle-${index}`}
+                  x={index * 40 + 20}
+                  y={0}
+                  width={20}
+                  height={0}
+                  dataKey="none"
+                  shape={<CandlestickShape 
+                    open={entry.open} 
+                    close={entry.close} 
+                    high={entry.high} 
+                    low={entry.low} 
+                  />}
+                />
+              ))}
               {currentPrice && (
                 <ReferenceLine 
                   y={currentPrice} 
@@ -233,7 +275,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                   }} 
                 />
               )}
-            </CandlestickChart>
+            </ComposedChart>
           )}
         </ResponsiveContainer>
       </div>
