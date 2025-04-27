@@ -1,6 +1,6 @@
-
 import { useState } from "react";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Mock data for initial symbols
 const initialSymbols = [
@@ -27,6 +27,7 @@ interface SymbolListProps {
 const SymbolList = ({ onSelectSymbol }: SymbolListProps) => {
   const [symbols, setSymbols] = useState<Symbol[]>(initialSymbols);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   const handleClick = (symbol: Symbol) => {
     setSelectedSymbol(symbol.symbol);
@@ -34,37 +35,51 @@ const SymbolList = ({ onSelectSymbol }: SymbolListProps) => {
   };
 
   return (
-    <div className="bg-secondary/80 rounded-md overflow-hidden">
-      <div className="grid grid-cols-[1fr_2fr_1fr_1fr] text-xs font-medium text-muted-foreground p-2 border-b border-border">
-        <div>Symbol</div>
-        <div>Name</div>
-        <div className="text-right">Price</div>
-        <div className="text-right">Change</div>
-      </div>
-      <div className="max-h-[300px] overflow-y-auto">
-        {symbols.map((symbol) => (
-          <div 
-            key={symbol.symbol}
-            onClick={() => handleClick(symbol)}
-            className={`grid grid-cols-[1fr_2fr_1fr_1fr] text-sm p-2 hover:bg-accent cursor-pointer transition-colors duration-200 ${
-              selectedSymbol === symbol.symbol ? "bg-accent" : ""
-            }`}
-          >
-            <div className="font-mono font-medium">{symbol.symbol}</div>
-            <div className="truncate">{symbol.name}</div>
-            <div className="text-right font-mono">{symbol.price.toFixed(2)}</div>
-            <div className={`text-right font-mono flex items-center justify-end ${symbol.change >= 0 ? 'trend-up' : 'trend-down'}`}>
-              {symbol.change >= 0 ? (
-                <ArrowUp className="h-3 w-3 mr-1" />
-              ) : (
-                <ArrowDown className="h-3 w-3 mr-1" />
-              )}
-              {Math.abs(symbol.change).toFixed(2)} ({Math.abs(symbol.changePercent).toFixed(2)}%)
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="bg-secondary/80 rounded-md overflow-hidden"
+    >
+      <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/50">
+        <span className="font-medium">Watchlist</span>
+        {isOpen ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="grid grid-cols-[1fr_2fr_1fr_1fr] text-xs font-medium text-muted-foreground p-2 border-y border-border">
+          <div>Symbol</div>
+          <div>Name</div>
+          <div className="text-right">Price</div>
+          <div className="text-right">Change</div>
+        </div>
+        <div className="max-h-[300px] overflow-y-auto">
+          {symbols.map((symbol) => (
+            <div 
+              key={symbol.symbol}
+              onClick={() => handleClick(symbol)}
+              className={`grid grid-cols-[1fr_2fr_1fr_1fr] text-sm p-2 hover:bg-accent cursor-pointer transition-colors duration-200 ${
+                selectedSymbol === symbol.symbol ? "bg-accent" : ""
+              }`}
+            >
+              <div className="font-mono font-medium">{symbol.symbol}</div>
+              <div className="truncate">{symbol.name}</div>
+              <div className="text-right font-mono">{symbol.price.toFixed(2)}</div>
+              <div className={`text-right font-mono flex items-center justify-end ${symbol.change >= 0 ? 'trend-up' : 'trend-down'}`}>
+                {symbol.change >= 0 ? (
+                  <ArrowUp className="h-3 w-3 mr-1" />
+                ) : (
+                  <ArrowDown className="h-3 w-3 mr-1" />
+                )}
+                {Math.abs(symbol.change).toFixed(2)} ({Math.abs(symbol.changePercent).toFixed(2)}%)
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
