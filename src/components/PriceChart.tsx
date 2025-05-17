@@ -133,30 +133,30 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-secondary p-3 border border-border rounded shadow-lg">
-          <p className="font-mono text-sm">{payload[0].payload.date}</p>
-          <p className="text-sm">
+        <div className="bg-secondary p-2 md:p-3 border border-border rounded shadow-lg text-xs md:text-sm"> {/* Responsive padding and text */}
+          <p className="font-mono">{payload[0].payload.date}</p>
+          <p>
             <span className="font-semibold">Open:</span>{" "}
             <span className="font-mono">{payload[0].payload.open.toFixed(2)}</span>
           </p>
-          <p className="text-sm">
+          <p>
             <span className="font-semibold">High:</span>{" "}
             <span className="font-mono">{payload[0].payload.high.toFixed(2)}</span>
           </p>
-          <p className="text-sm">
+          <p>
             <span className="font-semibold">Low:</span>{" "}
             <span className="font-mono">{payload[0].payload.low.toFixed(2)}</span>
           </p>
-          <p className="text-sm">
+          <p>
             <span className="font-semibold">Close:</span>{" "}
             <span className="font-mono">{payload[0].payload.close.toFixed(2)}</span>
           </p>
-          <p className="text-sm">
+          <p>
             <span className="font-semibold">Volume:</span>{" "}
             <span className="font-mono">{payload[0].payload.volume.toLocaleString()}</span>
           </p>
           {payload[0].payload.prediction && (
-            <p className="text-sm text-chart-prediction">
+            <p className="text-chart-prediction">
               <span className="font-semibold">Prediction:</span>{" "}
               <span className="font-mono">{payload[0].payload.prediction.toFixed(2)}</span>
             </p>
@@ -168,15 +168,15 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   };
 
   return (
-    <div className="w-full h-[500px] chart-container">
-      <div className="absolute top-4 left-4 z-10 mb-12">
-        <h3 className="text-lg font-bold">{symbol}</h3>
+    <div className="w-full h-full chart-container flex flex-col"> {/* Ensure h-full and flex-col */}
+      <div className="absolute top-1 left-1 md:top-2 md:left-2 z-10"> {/* Smaller spacing on mobile */}
+        <h3 className="text-sm md:text-lg font-bold">{symbol}</h3>
         {currentPrice && (
-          <p className="text-2xl font-mono font-semibold">
+          <p className="text-lg md:text-2xl font-mono font-semibold">
             ${currentPrice.toFixed(2)}
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[0.6rem] md:text-xs text-muted-foreground"> {/* Smaller date text on mobile */}
           {new Date().toLocaleString('en-US', { 
             weekday: 'short', 
             year: 'numeric', 
@@ -188,12 +188,13 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         </p>
       </div>
 
-      <div className="h-[70%] mt-16"> {/* Added margin-top to prevent overlap */}
+      {/* Top padding to avoid overlap with the title/price info */}
+      <div className="flex-grow h-[70%] pt-12 md:pt-16"> {/* pt instead of mt for better layout control with absolute */}
         <ResponsiveContainer width="100%" height="100%">
           {chartType === "line" ? (
             <AreaChart
               data={data}
-              margin={{ top: 50, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 5, left: 0, bottom: 0 }} // Reduced margins for mobile
             >
               <defs>
                 <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
@@ -208,15 +209,18 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis 
                 dataKey="date" 
-                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tick={{ fill: '#94a3b8', fontSize: 8 }} // Smaller ticks for mobile
                 axisLine={{ stroke: '#1e293b' }}
                 tickLine={{ stroke: '#1e293b' }}
+                interval="preserveStartEnd" // Show more ticks on mobile if possible
+                minTickGap={5} // Adjust gap for mobile
               />
               <YAxis 
                 domain={['auto', 'auto']} 
-                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tick={{ fill: '#94a3b8', fontSize: 8 }} // Smaller ticks for mobile
                 axisLine={{ stroke: '#1e293b' }}
                 tickLine={{ stroke: '#1e293b' }}
+                width={30} // Reduced width for YAxis on mobile
               />
               <Tooltip content={<CustomTooltip />} />
               <Area 
@@ -225,25 +229,27 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                 stroke="#3b82f6" 
                 fillOpacity={1} 
                 fill="url(#colorClose)" 
+                strokeWidth={1.5}
               />
               <Area 
                 type="monotone" 
                 dataKey="prediction" 
                 stroke="#6366f1"
-                strokeDasharray="5 5" 
+                strokeDasharray="3 3" // Simplified dash for mobile
                 fillOpacity={1} 
                 fill="url(#colorPrediction)" 
+                strokeWidth={1.5}
               />
               {currentPrice && (
                 <ReferenceLine 
                   y={currentPrice} 
                   stroke="#94a3b8" 
-                  strokeDasharray="3 3" 
+                  strokeDasharray="2 2" // Simplified dash
                   label={{ 
                     value: `$${currentPrice.toFixed(2)}`,
                     position: 'right',
                     fill: '#94a3b8',
-                    fontSize: 10,
+                    fontSize: 8, // Smaller label
                   }} 
                 />
               )}
@@ -251,45 +257,48 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
           ) : (
             <ComposedChart
               data={data}
-              margin={{ top: 50, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 5, left: 0, bottom: 0 }} // Reduced margins for mobile
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis 
                 dataKey="date" 
-                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tick={{ fill: '#94a3b8', fontSize: 8 }} // Smaller ticks for mobile
                 axisLine={{ stroke: '#1e293b' }}
                 tickLine={{ stroke: '#1e293b' }}
+                interval="preserveStartEnd"
+                minTickGap={5}
               />
               <YAxis 
                 domain={['auto', 'auto']} 
-                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tick={{ fill: '#94a3b8', fontSize: 8 }} // Smaller ticks for mobile
                 axisLine={{ stroke: '#1e293b' }}
                 tickLine={{ stroke: '#1e293b' }}
+                width={30} // Reduced width for YAxis on mobile
               />
               <Tooltip content={<CustomTooltip />} />
               {data.map((entry, index) => (
                 <Scatter
                   key={`candle-${index}`}
-                  data={[entry]}
-                  fill="none"
-                  shape={
+                  data={[entry]} // Scatter expects an array of data points for its `data` prop
+                  shape={ // Pass the necessary props to CustomCandlestickItem
                     <CustomCandlestickItem 
-                      index={index} 
-                      payload={entry}
+                      payload={entry} // The actual data for the candle
+                      // x, y, width, height are provided by Scatter internally based on layout
                     />
                   }
+                  // Removed fill="none" as shape handles rendering
                 />
               ))}
               {currentPrice && (
                 <ReferenceLine 
                   y={currentPrice} 
                   stroke="#94a3b8" 
-                  strokeDasharray="3 3" 
+                  strokeDasharray="2 2" 
                   label={{ 
                     value: `$${currentPrice.toFixed(2)}`,
                     position: 'right',
                     fill: '#94a3b8',
-                    fontSize: 10,
+                    fontSize: 8,
                   }} 
                 />
               )}
@@ -298,20 +307,23 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         </ResponsiveContainer>
       </div>
 
-      <div className="h-[30%]">
+      <div className="flex-shrink-0 h-[30%]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={data} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}> {/* Adjusted top margin */}
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis 
               dataKey="date"
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: '#94a3b8', fontSize: 8 }} // Smaller ticks for mobile
               axisLine={{ stroke: '#1e293b' }}
               tickLine={{ stroke: '#1e293b' }}
+              interval="preserveStartEnd"
+              minTickGap={5}
             />
             <YAxis 
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: '#94a3b8', fontSize: 8 }} // Smaller ticks for mobile
               axisLine={{ stroke: '#1e293b' }}
               tickLine={{ stroke: '#1e293b' }}
+              width={30} // Reduced width for YAxis on mobile
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar 
