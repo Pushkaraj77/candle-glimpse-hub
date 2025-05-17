@@ -1,4 +1,3 @@
-
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,9 @@ const mockSymbols = [
   { symbol: "GOOGL", name: "Alphabet Inc." },
   { symbol: "AMZN", name: "Amazon.com Inc." },
   { symbol: "META", name: "Meta Platforms, Inc." },
+  { symbol: "NVDA", name: "NVIDIA Corporation" },
+  { symbol: "JPM", name: "JPMorgan Chase & Co."},
+  { symbol: "TSLA", name: "Tesla, Inc."}
 ];
 
 interface SearchBarProps {
@@ -25,7 +27,6 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
     const value = e.target.value;
     setQuery(value);
     
-    // Filter suggestions based on input
     if (value.trim()) {
       const filtered = mockSymbols.filter(
         (symbol) =>
@@ -41,14 +42,15 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      onSearch(query);
+      onSearch(query.toUpperCase()); // Ensure query is uppercase for consistency
       setSuggestions([]);
+      // setQuery(""); // Optionally clear query after search
     }
   };
 
   const handleSuggestionSelect = (suggestion: typeof mockSymbols[0]) => {
     onSearch(suggestion.symbol);
-    setQuery(suggestion.symbol);
+    setQuery(suggestion.symbol); // Set query to selected symbol
     setSuggestions([]);
   };
 
@@ -57,23 +59,25 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
       <form onSubmit={handleSubmit} className="relative">
         <Input
           type="text"
-          placeholder="Search symbols (e.g. AAPL, MSFT)"
+          placeholder="Search symbols (e.g. AAPL)" // Simplified placeholder
           value={query}
           onChange={handleQueryChange}
-          className="pl-9 py-2 w-full bg-secondary text-foreground"
+          className="pl-10 pr-4 py-2 w-full bg-secondary text-foreground placeholder:text-muted-foreground/70 rounded-md text-sm" // Adjusted padding and placeholder style
         />
         <button 
           type="submit" 
-          className="absolute left-2 top-1/2 -translate-y-1/2"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Search"
         >
-          <Search className="h-4 w-4 text-muted-foreground" />
+          <Search className="h-4 w-4" />
         </button>
       </form>
-      <SearchSuggestions 
-        suggestions={suggestions} 
-        onSelect={handleSuggestionSelect}
-      />
+      {suggestions.length > 0 && ( // Conditionally render suggestions
+        <SearchSuggestions 
+          suggestions={suggestions} 
+          onSelect={handleSuggestionSelect}
+        />
+      )}
     </div>
   );
 };

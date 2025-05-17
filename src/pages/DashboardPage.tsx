@@ -1,23 +1,25 @@
 import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { Button } from "@/components/ui/button";
 import SearchBar from "@/components/SearchBar";
 import SymbolList from "@/components/SymbolList";
 import ChartContainer from "@/components/ChartContainer";
 import SymbolDetail from "@/components/SymbolDetail";
-import AllSymbolsList from "@/components/AllSymbolsList"; // Import new component
-import { Symbol } from "@/types"; // Import Symbol from types.ts
+import AllSymbolsList from "@/components/AllSymbolsList";
+import { Symbol } from "@/types";
 import { 
   ChartCandlestick, 
   ChevronLeft, 
   ChevronRight, 
   Menu, 
   X as MinimizeIcon,
-  ChevronDown, // For new collapsible
-  ChevronUp    // For new collapsible
+  ChevronDown,
+  ChevronUp,
+  Home // Added Home icon
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/components/ui/use-toast";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"; // For AllSymbolsList
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Renamed to ALL_AVAILABLE_SYMBOLS and serves as the master list of all possible symbols
 const ALL_AVAILABLE_SYMBOLS: Symbol[] = [
@@ -31,21 +33,58 @@ const ALL_AVAILABLE_SYMBOLS: Symbol[] = [
   { symbol: "JPM", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
 ];
 
-const Index = () => {
+const DashboardPage = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  
-  // State for the user's personal watchlist
+  const [searchParams, setSearchParams] = useSearchParams(); // For reading URL query
+  const navigate = useNavigate(); // For navigation
+
   const [watchlistSymbols, setWatchlistSymbols] = useState<Symbol[]>(() => {
-    // Initialize watchlist with first 2 symbols from ALL_AVAILABLE_SYMBOLS
     return ALL_AVAILABLE_SYMBOLS.slice(0, 2);
   });
 
-  const [selectedSymbol, setSelectedSymbol] = useState<Symbol>(watchlistSymbols[0] || ALL_AVAILABLE_SYMBOLS[0]);
+  // Initialize selectedSymbol: try URL, then first of watchlist, then first of all available
+  const [selectedSymbol, setSelectedSymbol] = useState<Symbol>(() => {
+    const symbolFromUrl = searchParams.get('symbol');
+    if (symbolFromUrl) {
+      const found = ALL_AVAILABLE_SYMBOLS.find(s => s.symbol.toLowerCase() === symbolFromUrl.toLowerCase());
+      if (found) return found;
+    }
+    return watchlistSymbols[0] || ALL_AVAILABLE_SYMBOLS[0];
+  });
   
   const [showSidebar, setShowSidebar] = useState(!isMobile); 
-  const [showWatchlistPanel, setShowWatchlistPanel] = useState(!isMobile); // Renamed for clarity
-  const [isAllSymbolsOpen, setIsAllSymbolsOpen] = useState(false); // For AllSymbolsList collapsible
+  const [showWatchlistPanel, setShowWatchlistPanel] = useState(!isMobile);
+  const [isAllSymbolsOpen, setIsAllSymbolsOpen] = useState(false);
+
+  // Effect to handle symbol changes from URL query parameters
+  useEffect(() => {
+    const symbolFromQuery = searchParams.get('symbol');
+    if (symbolFromQuery) {
+      const foundSymbol = ALL_AVAILABLE_SYMBOLS.find(
+        (s) => s.symbol.toLowerCase() === symbolFromQuery.toLowerCase()
+      );
+      if (foundSymbol) {
+        if (selectedSymbol.symbol !== foundSymbol.symbol) { // Only update if different
+          setSelectedSymbol(foundSymbol);
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Symbol Not Found",
+          description: `Could not find data for symbol "${symbolFromQuery}" from URL. Displaying default.`,
+        });
+        // Optionally remove the invalid symbol from URL or navigate to default
+        // For now, it will just show default based on initial state logic if symbolFromQuery is bad
+        if (watchlistSymbols.length > 0 && selectedSymbol.symbol !== watchlistSymbols[0].symbol) {
+            setSelectedSymbol(watchlistSymbols[0]);
+        } else if (ALL_AVAILABLE_SYMBOLS.length > 0 && selectedSymbol.symbol !== ALL_AVAILABLE_SYMBOLS[0].symbol) {
+            setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
+        }
+      }
+    }
+  }, [searchParams, toast, selectedSymbol.symbol, watchlistSymbols]); // Added dependencies
+
 
   // Update selectedSymbol if it's removed from watchlist or watchlist becomes empty
   useEffect(() => {
@@ -53,11 +92,10 @@ const Index = () => {
       if (!watchlistSymbols.find(s => s.symbol === selectedSymbol.symbol)) {
         setSelectedSymbol(watchlistSymbols[0]);
       }
-    } else if (ALL_AVAILABLE_SYMBOLS.length > 0) {
+    } else if (ALL_AVAILABLE_SYMBOLS.length > 0 && (!selectedSymbol || !ALL_AVAILABLE_SYMBOLS.find(s => s.symbol === selectedSymbol.symbol))) {
       setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
     }
-    // If both are empty, selectedSymbol could be an issue, but ALL_AVAILABLE_SYMBOLS is constant here
-  }, [watchlistSymbols, selectedSymbol.symbol]);
+  }, [watchlistSymbols, selectedSymbol?.symbol]);
 
 
   const handleSearch = (query: string) => {
@@ -67,6 +105,8 @@ const Index = () => {
 
     if (foundSymbol) {
       setSelectedSymbol(foundSymbol);
+      // Update URL query parameter
+      setSearchParams({ symbol: foundSymbol.symbol });
       if (isMobile) {
         setShowWatchlistPanel(false);
         setShowSidebar(false); 
@@ -80,14 +120,14 @@ const Index = () => {
     }
   };
 
-  // Called when a symbol is selected from SymbolList (watchlist)
   const handleSelectSymbolFromWatchlist = (symbol: Symbol) => {
     setSelectedSymbol(symbol);
+    setSearchParams({ symbol: symbol.symbol }); // Update URL
     if (isMobile) { 
       setShowWatchlistPanel(false);
     }
   };
-
+  
   const handleAddToWatchlist = (symbolToAdd: Symbol) => {
     if (!watchlistSymbols.find(s => s.symbol === symbolToAdd.symbol)) {
       setWatchlistSymbols(prev => [...prev, symbolToAdd]);
@@ -100,25 +140,34 @@ const Index = () => {
   const handleRemoveFromWatchlist = (symbolToRemove: Symbol) => {
     setWatchlistSymbols(prev => {
       const newWatchlist = prev.filter(s => s.symbol !== symbolToRemove.symbol);
-       // If the removed symbol was selected, and the new watchlist is not empty, select its first item.
-      if (selectedSymbol.symbol === symbolToRemove.symbol && newWatchlist.length > 0) {
-        setSelectedSymbol(newWatchlist[0]);
-      } else if (selectedSymbol.symbol === symbolToRemove.symbol && newWatchlist.length === 0 && ALL_AVAILABLE_SYMBOLS.length > 0) {
-        // If watchlist becomes empty, select first from all available
-        setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
+      if (selectedSymbol.symbol === symbolToRemove.symbol) {
+        if (newWatchlist.length > 0) {
+          setSelectedSymbol(newWatchlist[0]);
+          setSearchParams({ symbol: newWatchlist[0].symbol });
+        } else if (ALL_AVAILABLE_SYMBOLS.length > 0) {
+          setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
+          setSearchParams({ symbol: ALL_AVAILABLE_SYMBOLS[0].symbol });
+        } else {
+          // TODO: Handle case where no symbols are left at all
+          // For now, selectedSymbol might become invalid if ALL_AVAILABLE_SYMBOLS is also empty
+        }
       }
       return newWatchlist;
     });
     toast({ title: "Removed from Watchlist", description: `${symbolToRemove.symbol} has been removed.` });
   };
 
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-border py-2 px-4 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0">
+      <header className="border-b border-border py-2 px-4 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0 sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
         <div className="flex items-center self-start md:self-center">
-          <ChartCandlestick className="h-6 w-6 mr-2" />
-          <h1 className="text-xl font-bold">StockVision</h1>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="mr-2">
+            <Home className="h-5 w-5" />
+          </Button>
+          <ChartCandlestick className="h-6 w-6 mr-2 text-primary" />
+          <h1 className="text-xl font-bold">StockVision AI Dashboard</h1>
         </div>
         <div className="w-full md:w-[300px]">
           <SearchBar onSearch={handleSearch} />
@@ -133,14 +182,13 @@ const Index = () => {
             className={`transition-all duration-300 ease-in-out border-border p-2 md:p-4 flex flex-col
               ${isMobile
                 ? showWatchlistPanel ? 'w-full order-1 h-1/2 md:h-auto border-b' : 'hidden' 
-                : showWatchlistPanel ? 'w-[300px] border-r' : 'w-[50px] border-r'
-              }`}
+                : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r' : 'w-[50px] border-r' 
+              }`} // Adjusted width for better consistency
           >
             {showWatchlistPanel || !isMobile ? ( 
               <>
                 <div className="flex items-center justify-between mb-1 md:mb-3">
-                  {/* This title is for the whole panel now, SymbolList has its own */}
-                  <h2 className="text-lg font-semibold">Market Lists</h2> 
+                  <h2 className="text-lg font-semibold pl-1">Market Lists</h2> 
                   <Button
                     variant="ghost"
                     size="icon"
@@ -151,27 +199,27 @@ const Index = () => {
                   </Button>
                 </div>
                 {showWatchlistPanel && (
-                  <div className="flex flex-col gap-4 flex-1 overflow-y-auto"> {/* Container for both lists */}
+                  <div className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1"> {/* Added pr-1 for scrollbar space */}
                     <SymbolList 
                       symbols={watchlistSymbols} 
                       onSelectSymbol={handleSelectSymbolFromWatchlist}
                       onRemoveSymbol={handleRemoveFromWatchlist}
-                      selectedSymbolValue={selectedSymbol.symbol}
+                      selectedSymbolValue={selectedSymbol?.symbol} // Added optional chaining
                     />
                     <Collapsible
                       open={isAllSymbolsOpen}
                       onOpenChange={setIsAllSymbolsOpen}
-                      className="bg-secondary/80 rounded-md overflow-hidden flex-1 flex flex-col min-h-0"
+                      className="bg-secondary/50 rounded-md overflow-hidden flex-1 flex flex-col min-h-0" // Slightly less opaque
                     >
-                      <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/50">
-                        <span className="font-medium text-sm md:text-base">All Symbols</span>
+                      <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/50 rounded-t-md"> {/* rounded-t-md */}
+                        <span className="font-medium text-sm md:text-base">All Market Symbols</span>
                         {isAllSymbolsOpen ? (
                           <ChevronUp className="h-4 w-4" />
                         ) : (
                           <ChevronDown className="h-4 w-4" />
                         )}
                       </CollapsibleTrigger>
-                      <CollapsibleContent className="flex-1 overflow-y-auto min-h-0">
+                      <CollapsibleContent className="flex-1 overflow-y-auto min-h-0 p-1"> {/* Added padding */}
                         <AllSymbolsList
                           allSymbols={ALL_AVAILABLE_SYMBOLS}
                           watchlistSymbols={watchlistSymbols}
@@ -189,6 +237,7 @@ const Index = () => {
                     size="icon"
                     className="self-center mt-2"
                     onClick={() => setShowWatchlistPanel(true)}
+                    aria-label="Show watchlist panel"
                 >
                     <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -198,17 +247,17 @@ const Index = () => {
 
         {/* Chart Panel */}
         <div className={`flex-1 p-1 md:p-4 ${isMobile ? 'order-2 w-full h-1/2 md:h-auto' : 'relative'}`}>
-          {isMobile && !showWatchlistPanel && ( // Corrected state variable here
+          {isMobile && !showWatchlistPanel && (
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-2 left-2 z-20 bg-background/80 backdrop-blur-sm"
-              onClick={() => {setShowWatchlistPanel(true); setShowSidebar(false);}} // Corrected state variable
+              className="absolute top-2 left-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
+              onClick={() => {setShowWatchlistPanel(true); setShowSidebar(false);}}
+              aria-label="Open watchlist panel"
             >
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          {/* Ensure selectedSymbol is valid before rendering ChartContainer */}
           {selectedSymbol && <ChartContainer symbol={selectedSymbol.symbol} />}
         </div>
 
@@ -218,18 +267,19 @@ const Index = () => {
             className={`transition-all duration-300 ease-in-out border-border
               ${isMobile
                 ? showSidebar ? 'w-full order-3 p-2 md:p-4 border-t h-1/2 md:h-auto' : 'hidden'
-                : showSidebar ? 'w-[300px] opacity-100 p-4 border-l' : 'w-0 opacity-0 overflow-hidden'
+                : showSidebar ? 'w-[280px] md:w-[300px] opacity-100 p-4 border-l' : 'w-0 opacity-0 overflow-hidden' // Adjusted width
               }`}
           >
-            {showSidebar && selectedSymbol && ( // Ensure selectedSymbol exists
+            {showSidebar && selectedSymbol && (
               <>
               <div className="flex items-center justify-between mb-1 md:mb-3">
-                <h2 className="text-lg font-semibold">Details</h2>
+                <h2 className="text-lg font-semibold pl-1">Details</h2>
                  <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowSidebar(false)}
                     className={isMobile ? '' : 'hidden md:hidden'} 
+                    aria-label="Close details panel"
                   >
                     <MinimizeIcon className="h-5 w-5" />
                   </Button>
@@ -251,7 +301,7 @@ const Index = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
             onClick={() => setShowSidebar(!showSidebar)}
             aria-label={showSidebar ? "Hide details sidebar" : "Show details sidebar"}
           >
@@ -263,9 +313,9 @@ const Index = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute top-2 right-2 z-20 bg-background/80 backdrop-blur-sm"
-            onClick={() => {setShowSidebar(true); setShowWatchlistPanel(false);}} // Corrected state variable
-            aria-label="Show details"
+            className="absolute top-2 right-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
+            onClick={() => {setShowSidebar(true); setShowWatchlistPanel(false);}}
+            aria-label="Show details panel"
           >
             <Menu className="h-5 w-5" /> 
           </Button>
@@ -275,4 +325,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default DashboardPage;
