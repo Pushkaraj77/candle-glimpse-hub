@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { 
   AreaChart, 
@@ -55,24 +54,33 @@ interface PriceChartProps {
   chartType: "candlestick" | "line";
 }
 
-// Custom candlestick shape for recharts
+// Custom candlestick shape for recharts - FIXED
 const CandlestickShape = (props: any) => {
   const { x, y, width, height, open, close, low, high } = props;
   
+  // Determine if the stock is rising or falling
   const isRising = close > open;
   const color = isRising ? "#22c55e" : "#ef4444";
-  const bodyHeight = Math.abs(open - close);
-  const bodyY = isRising ? close : open;
+  
+  // Calculate the y-coordinates based on the actual data values
+  const yOpen = props.yAxis.scale(open);
+  const yClose = props.yAxis.scale(close);
+  const yHigh = props.yAxis.scale(high);
+  const yLow = props.yAxis.scale(low);
+  
+  // Calculate body height based on scaled values
+  const bodyHeight = Math.abs(yOpen - yClose);
+  // The body should start at the higher of the open/close values (lower y-coordinate in SVG)
+  const bodyY = Math.min(yOpen, yClose);
 
-  // Draw a thin line from low to high
   return (
     <g>
-      {/* Wick line from low to high */}
+      {/* Wick line from low to high using scaled coordinates */}
       <line
         x1={x + width / 2}
-        y1={low}
+        y1={yLow}
         x2={x + width / 2}
-        y2={high}
+        y2={yHigh}
         stroke={color}
         strokeWidth={1}
       />
@@ -81,7 +89,7 @@ const CandlestickShape = (props: any) => {
         x={x}
         y={bodyY}
         width={width}
-        height={bodyHeight}
+        height={bodyHeight > 1 ? bodyHeight : 1} // Ensure minimum height for visibility
         fill={color}
         stroke={color}
       />
@@ -91,10 +99,12 @@ const CandlestickShape = (props: any) => {
 
 // Custom component to render candlesticks
 const CustomCandlestickItem = (props: any) => {
-  const { x, y, index, payload, width } = props;
+  if (!props.payload) return null;
+  
+  const { x, index, payload, width, yAxis } = props;
   
   // Spacing between candlesticks
-  const candleWidth = 20;
+  const candleWidth = Math.min(20, Math.max(width * 0.8, 10)); // Responsive width
   const xPos = x - (candleWidth / 2); // Center the candle
   
   return (
@@ -106,6 +116,7 @@ const CustomCandlestickItem = (props: any) => {
       close={payload.close}
       high={payload.high}
       low={payload.low}
+      yAxis={yAxis} // Pass yAxis for proper scaling
     />
   );
 };
