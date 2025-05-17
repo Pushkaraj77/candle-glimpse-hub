@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react"; // Added useMemo
 import ReactApexChart from "react-apexcharts";
 import { 
   AreaChart, 
@@ -13,40 +13,64 @@ import {
   Bar
 } from "recharts";
 
-// Static data for candlestick chart
-const staticCandlestickData = [
-  { date: new Date("2025-01-01T00:00:00.000Z"), open: 150, high: 155, low: 148, close: 152, volume: 5000000, prediction: null },
-  { date: new Date("2025-01-02T00:00:00.000Z"), open: 152, high: 158, low: 150, close: 157, volume: 6200000, prediction: null },
-  { date: new Date("2025-01-03T00:00:00.000Z"), open: 157, high: 160, low: 155, close: 156, volume: 4800000, prediction: null },
-  { date: new Date("2025-01-04T00:00:00.000Z"), open: 156, high: 162, low: 154, close: 161, volume: 7100000, prediction: 163 },
-  { date: new Date("2025-01-05T00:00:00.000Z"), open: 161, high: 165, low: 159, close: 160, volume: 5500000, prediction: 162 },
-  { date: new Date("2025-01-06T00:00:00.000Z"), open: 160, high: 163, low: 157, close: 158, volume: 6000000, prediction: 159 },
-  { date: new Date("2025-01-07T00:00:00.000Z"), open: 158, high: 160, low: 155, close: 159, volume: 4500000, prediction: 160 },
-  { date: new Date("2025-01-08T00:00:00.000Z"), open: 159, high: 166, low: 158, close: 165, volume: 7500000, prediction: 167 },
-  { date: new Date("2025-01-09T00:00:00.000Z"), open: 165, high: 170, low: 164, close: 168, volume: 6800000, prediction: 170 },
-  { date: new Date("2025-01-10T00:00:00.000Z"), open: 168, high: 172, low: 167, close: 170, volume: 7200000, prediction: 171 },
-];
+// Mock data for candlestick chart
+const generateMockCandlestickData = (days: number = 30) => {
+  const data = [];
+  let basePrice = 150; // Starting price
+  
+  for (let i = 0; i < days; i++) {
+    const volatility = Math.random() * 5; // Random volatility for the day
+    const open = basePrice;
+    const close = basePrice + (Math.random() - 0.5) * volatility;
+    const high = Math.max(open, close) + Math.random() * volatility;
+    const low = Math.min(open, close) - Math.random() * volatility;
+    const volume = Math.floor(Math.random() * 10000000) + 1000000; // Random volume
+    
+    const dateObj = new Date();
+    dateObj.setDate(dateObj.getDate() - (days - i));
+    
+    data.push({
+      date: dateObj, // Store as Date object
+      open,
+      close,
+      high,
+      low,
+      volume,
+      prediction: i > days - 5 ? close + (Math.random() - 0.3) * volatility : null
+    });
+    
+    basePrice = close;
+  }
+  
+  return data;
+};
 
 interface PriceChartProps {
   symbol: string;
-  interval: string; // Interval is kept for potential future use or other chart elements
+  interval: string;
   chartType: "candlestick" | "line";
 }
 
+// Removed CandlestickShape and CustomCandlestickItem as they were for Recharts
+
 const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
-  // Use static data
-  const [data, setData] = useState(staticCandlestickData);
+  const [data, setData] = useState(generateMockCandlestickData());
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   
   useEffect(() => {
-    // Set static data. Interval changes won't fetch new data for now.
-    setData(staticCandlestickData); 
+    const newMockData = generateMockCandlestickData(
+      interval === '1d' ? 30 : 
+      interval === '1w' ? 60 : 
+      interval === '1m' ? 90 : 
+      interval === '3m' ? 120 : 
+      interval === '6m' ? 180 : 
+      interval === '1y' ? 250 : 365
+    );
+    setData(newMockData);
     
-    if (staticCandlestickData.length > 0) {
-      setCurrentPrice(staticCandlestickData[staticCandlestickData.length - 1].close);
+    if (newMockData.length > 0) {
+      setCurrentPrice(newMockData[newMockData.length - 1].close);
     }
-    // Symbol is kept as a dependency as it might be used in titles or other non-data parts.
-    // Interval is kept as it's part of the props and might be used elsewhere.
   }, [symbol, interval]);
 
   // Custom tooltip component for the Recharts (Line/Area chart)
@@ -100,14 +124,42 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     return String(date); // Fallback
   };
 
+  const { yMin, yMax } = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { yMin: undefined, yMax: undefined }; // Default if no data
+    }
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+
+    data.forEach(item => {
+      if (item.low < minPrice) minPrice = item.low;
+      if (item.high > maxPrice) maxPrice = item.high;
+    });
+
+    const paddingPercentage = 0.10; // 10% total padding (5% top, 5% bottom)
+    const range = maxPrice - minPrice;
+    // Add a small fixed padding if all data points are the same, otherwise use percentage
+    const paddingValue = range === 0 ? 10 : range * paddingPercentage; 
+
+    const finalMin = Math.floor(minPrice - paddingValue / 2);
+    const finalMax = Math.ceil(maxPrice + paddingValue / 2);
+    
+    // Ensure min and max are not the same if all data points were identical after padding calc
+    if (finalMin === finalMax) {
+        return { yMin: finalMin - 5, yMax: finalMax + 5}; // Add a bit more fixed padding
+    }
+
+    return { yMin: finalMin, yMax: finalMax };
+  }, [data]);
+
   // ApexCharts options and series for candlestick
   const apexCandlestickSeries = useMemo(() => [{
     name: 'Candlestick',
     data: data.map(item => ({
-      x: item.date.getTime(),
+      x: item.date.getTime(), // ApexCharts expects timestamp for datetime x-axis
       y: [item.open, item.high, item.low, item.close]
     }))
-  }], [data]); // Data is the primary dependency here
+  }], [data]);
 
   const apexCandlestickOptions: ApexCharts.ApexOptions = useMemo(() => ({
     chart: {
@@ -122,7 +174,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       mode: 'dark' 
     },
     title: {
-      text: `${symbol} Candlestick Chart`,
+      text: `${symbol} Candlestick Chart`, // Dynamic title
       align: 'left',
       style: {
         color: '#e0e0e0', 
@@ -148,6 +200,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       }
     },
     yaxis: {
+      min: yMin, // Dynamic min based on data
+      max: yMax, // Dynamic max based on data
       tooltip: {
         enabled: true
       },
@@ -195,7 +249,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         format: 'dd MMM yyyy HH:mm' 
       }
     },
-  }), [symbol]); // Dependency array updated, yMin/yMax removed
+  }), [symbol, yMin, yMax]); // Dependencies for options
 
   return (
     <div className="w-full h-full chart-container flex flex-col">
@@ -286,8 +340,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
             </AreaChart>
           ) : ( // Candlestick chart using ApexCharts
             <ReactApexChart 
-              options={apexCandlestickOptions} 
-              series={apexCandlestickSeries} 
+              options={apexCandlestickOptions} // Use memoized options
+              series={apexCandlestickSeries} // Use memoized series
               type="candlestick" 
               height="100%" 
               width="100%"
