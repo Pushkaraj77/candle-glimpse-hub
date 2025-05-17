@@ -1,13 +1,12 @@
-
 import { useEffect, useState, useMemo } from "react";
 import ReactApexChart from "react-apexcharts";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   ReferenceLine,
   BarChart,
@@ -17,76 +16,86 @@ import { ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CandlestickInterval } from "@/types";
 
-// Updated to take symbol for data variation
-const generateMockCandlestickData = (days: number = 30, symbol: string, candlestickInterval: string) => {
+const CHART_ID = "candlestick-chart"; // Define chart ID for ApexCharts API
+
+const getCandleStepMs = (interval: string): number => {
+  const value = parseInt(interval.slice(0, -1), 10);
+  if (interval.endsWith('m')) return value * 60 * 1000;
+  if (interval.endsWith('h')) return value * 60 * 60 * 1000;
+  if (interval.endsWith('d')) return value * 24 * 60 * 60 * 1000;
+  return 60 * 60 * 1000; // Default to 1 hour if format is unknown
+};
+
+// Updated to take numCandles and use candlestickInterval for date stepping
+const generateMockCandlestickData = (numCandles: number, symbol: string, candlestickIntervalStr: string) => {
   const data = [];
-  
+
   let initialSeed = 1;
   for (let i = 0; i < symbol.length; i++) {
-    // Simple hash to vary seed based on symbol
-    initialSeed = (initialSeed * 31 + symbol.charCodeAt(i) + (i+1) * 7) & 0xFFFFFFFF;
+    initialSeed = (initialSeed * 31 + symbol.charCodeAt(i) + (i + 1) * 7) & 0xFFFFFFFF;
   }
-  
-  // Add interval to the seed calculation to ensure different data for different intervals
-  const intervalSeed = candlestickInterval === '15m' ? 15 : 
-                      candlestickInterval === '30m' ? 30 :
-                      candlestickInterval === '1h' ? 60 :
-                      candlestickInterval === '4h' ? 240 :
-                      candlestickInterval === '1d' ? 1440 : 120;
-                      
-  initialSeed = (initialSeed * intervalSeed) & 0xFFFFFFFF;
-  
-  let basePrice = 100 + (initialSeed % 150); // Vary base price with symbol
-  if (basePrice < 50) basePrice = 50 + (initialSeed % 50); // Ensure base price isn't too low
-  if (basePrice > 250) basePrice = 200 + (initialSeed % 50); // Ensure base price isn't too high
+
+  const intervalSeedPart = candlestickIntervalStr === '15m' ? 15 :
+    candlestickIntervalStr === '30m' ? 30 :
+    candlestickIntervalStr === '1h' ? 60 :
+    candlestickIntervalStr === '4h' ? 240 :
+    candlestickIntervalStr === '1d' ? 1440 : 1; // Added default for safety
+  initialSeed = (initialSeed * intervalSeedPart) & 0xFFFFFFFF;
+
+  let basePrice = 100 + (initialSeed % 150);
+  if (basePrice < 50) basePrice = 50 + (initialSeed % 50);
+  if (basePrice > 250) basePrice = 200 + (initialSeed % 50);
 
   let currentSeed = initialSeed;
   function seededRandom() {
-    // LCG to generate pseudo-random numbers
     currentSeed = (1664525 * currentSeed + 1013904223) & 0xFFFFFFFF;
     return currentSeed / 0xFFFFFFFF;
   }
 
-  // Adjust volatility based on interval - shorter intervals have less volatility
-  const intervalVolatilityFactor = candlestickInterval === '15m' ? 0.6 : 
-                                  candlestickInterval === '30m' ? 0.7 :
-                                  candlestickInterval === '1h' ? 0.8 :
-                                  candlestickInterval === '4h' ? 0.9 : 1.0;
+  const intervalVolatilityFactor = candlestickIntervalStr === '15m' ? 0.3 : // Reduced further for shorter intervals
+    candlestickIntervalStr === '30m' ? 0.4 :
+    candlestickIntervalStr === '1h' ? 0.5 :
+    candlestickIntervalStr === '4h' ? 0.7 : 1.0;
 
-  for (let i = 0; i < days; i++) {
-    const volatility = (seededRandom() * 4 + 1.5) * intervalVolatilityFactor; // Volatility between 1.5 and 5.5, adjusted
-    const trend = (seededRandom() - 0.49); // Slight trend possibility
-    
+  const candleStepMsValue = getCandleStepMs(candlestickIntervalStr);
+
+  for (let i = 0; i < numCandles; i++) {
+    const volatility = (seededRandom() * 3 + 1.0) * intervalVolatilityFactor; // Adjusted base volatility
+    const trend = (seededRandom() - 0.49);
+
     const open = basePrice;
     let close = basePrice + trend * volatility;
-    if (close <= 0.1) close = open * (0.95 + seededRandom() * 0.1); // Prevent zero or negative close
+    if (close <= 0.1) close = open * (0.95 + seededRandom() * 0.1);
 
     const highRoll = seededRandom();
     const lowRoll = seededRandom();
 
-    let high = Math.max(open, close) + highRoll * volatility * 0.6;
-    let low = Math.min(open, close) - lowRoll * volatility * 0.6;
+    let high = Math.max(open, close) + highRoll * volatility * 0.5; // Adjusted impact
+    let low = Math.min(open, close) - lowRoll * volatility * 0.5;  // Adjusted impact
 
-    if (low <= 0.1) low = Math.min(open, close) * 0.9; // Prevent zero or negative low
-    if (high <= low) high = low + 0.01; // Ensure high > low
+    if (low <= 0.1) low = Math.min(open, close) * 0.9;
+    if (high <= low) high = low + 0.01;
 
-    const volume = Math.floor(seededRandom() * 10000000) + 1000000; 
+    const volume = Math.floor(seededRandom() * 10000000) + 1000000;
     
-    const dateObj = new Date();
-    dateObj.setDate(dateObj.getDate() - (days - i));
+    // Calculate date based on candle index and interval step
+    const timestamp = Date.now() - (numCandles - 1 - i) * candleStepMsValue;
+    const candleDate = new Date(timestamp);
     
+    const isPredictionCandle = i >= numCandles - Math.min(5, Math.floor(numCandles * 0.1)); // Predict last 5 or 10%
+
     data.push({
-      date: dateObj,
+      date: candleDate,
       open: parseFloat(open.toFixed(2)),
       close: parseFloat(close.toFixed(2)),
       high: parseFloat(high.toFixed(2)),
       low: parseFloat(low.toFixed(2)),
       volume,
-      prediction: i > days - 5 ? parseFloat((close + (seededRandom() - 0.3) * volatility).toFixed(2)) : null
+      prediction: isPredictionCandle ? parseFloat((close + (seededRandom() - 0.3) * volatility).toFixed(2)) : null
     });
     
     basePrice = close;
-    if (basePrice <= 0.1) basePrice = (initialSeed % 10) + 1; // Reset base price if it crashes hard
+    if (basePrice <= 0.1) basePrice = (initialSeed % 10) + 1;
   }
   
   return data;
@@ -94,27 +103,34 @@ const generateMockCandlestickData = (days: number = 30, symbol: string, candlest
 
 interface PriceChartProps {
   symbol: string;
-  interval: string;
+  interval: string; // This is the overall time range from TimeSelector (e.g., "1d", "1w")
   chartType: "candlestick" | "line";
 }
 
 const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
-  const [candlestickInterval, setCandlestickInterval] = useState<string>("1h");
-  const [data, setData] = useState(() => generateMockCandlestickData(30, symbol, candlestickInterval)); // Initial data generation with symbol
+  const [candlestickInterval, setCandlestickInterval] = useState<string>("1h"); // Default candlestick duration
+  const [data, setData] = useState(() => generateMockCandlestickData(100, symbol, candlestickInterval));
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  
+  // zoomLevel state is removed as we will use ApexCharts API directly
+
   useEffect(() => {
-    const daysCount = 
-      interval === '1d' ? 30 : 
-      interval === '1w' ? 60 : 
-      interval === '1m' ? 90 : 
-      interval === '3m' ? 120 : 
-      interval === '6m' ? 180 : 
-      interval === '1y' ? 250 : 365;
+    const candlestickIntervalMinutes = {
+      "15m": 15, "30m": 30, "1h": 60, "4h": 240, "1d": 1440,
+    }[candlestickInterval] || 60;
+
+    const overallIntervalDays = {
+      "1d": 1, "1w": 7, "1m": 30, "3m": 90, "6m": 180, "1y": 365, "5y": 365 * 5,
+    }[interval] || 30;
+
+    const totalDurationMinutes = overallIntervalDays * 24 * 60;
+    let numberOfCandles = Math.floor(totalDurationMinutes / candlestickIntervalMinutes);
     
-    // Pass symbol and candlestickInterval to generateMockCandlestickData
-    const newMockData = generateMockCandlestickData(daysCount, symbol, candlestickInterval);
+    // Ensure a minimum number of candles, e.g., for "1d" overall and "1d" candlestick.
+    // And a maximum to prevent performance issues with very short candle intervals over long periods.
+    numberOfCandles = Math.max(1, numberOfCandles); 
+    numberOfCandles = Math.min(1000, numberOfCandles); // Cap at 1000 candles
+
+    const newMockData = generateMockCandlestickData(numberOfCandles, symbol, candlestickInterval);
     setData(newMockData);
     
     if (newMockData.length > 0) {
@@ -127,8 +143,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     if (active && payload && payload.length) {
       const entry = payload[0].payload;
       const dateLabel = entry.date instanceof Date 
-        ? entry.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        : entry.date; // Fallback if date is already stringified
+        ? entry.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : entry.date; 
 
       return (
         <div className="bg-secondary p-2 md:p-3 border border-border rounded shadow-lg text-xs md:text-sm">
@@ -168,7 +184,13 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   // Format date for Recharts XAxis
   const formatDateTick = (date: Date | string) => {
     if (date instanceof Date) {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      // Determine formatting based on candlestickInterval for clarity
+      const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+      if (candlestickInterval.endsWith('m') || candlestickInterval.endsWith('h')) {
+        options.hour = '2-digit';
+        options.minute = '2-digit';
+      }
+      return date.toLocaleDateString('en-US', options);
     }
     return String(date); // Fallback
   };
@@ -181,8 +203,10 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     let maxPrice = -Infinity;
 
     data.forEach(item => {
-      if (item.low < minPrice) minPrice = item.low;
-      if (item.high > maxPrice) maxPrice = item.high;
+      const lowValue = item.prediction !== null && item.prediction < item.low ? item.prediction : item.low;
+      const highValue = item.prediction !== null && item.prediction > item.high ? item.prediction : item.high;
+      if (lowValue < minPrice) minPrice = lowValue;
+      if (highValue > maxPrice) maxPrice = highValue;
     });
 
     const paddingPercentage = 0.10; // 10% total padding (5% top, 5% bottom)
@@ -207,16 +231,21 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     data: data.map(item => ({
       x: item.date.getTime(), // ApexCharts expects timestamp for datetime x-axis
       y: [item.open, item.high, item.low, item.close],
-      prediction: item.prediction // Add prediction data to be used for styling
+      isPrediction: item.prediction !== null, // Flag for prediction candles
+      predictionValue: item.prediction // Add prediction data to be used for styling
     }))
   }], [data]);
 
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev * 1.5, 5)); // Limit max zoom
+    if (window.ApexCharts) {
+      window.ApexCharts.exec(CHART_ID, 'zoomIn');
+    }
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev / 1.5, 0.5)); // Limit min zoom
+    if (window.ApexCharts) {
+      window.ApexCharts.exec(CHART_ID, 'zoomOut');
+    }
   };
 
   const candlestickIntervals: CandlestickInterval[] = [
@@ -229,6 +258,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
 
   const apexCandlestickOptions: ApexCharts.ApexOptions = useMemo(() => ({
     chart: {
+      id: CHART_ID, // Crucial for API calls
       type: 'candlestick',
       height: '100%', 
       toolbar: {
@@ -236,21 +266,31 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         tools: {
           download: false,
           selection: true,
-          zoom: true,
-          zoomin: true,
-          zoomout: true,
+          zoom: true, // Box selection zoom
+          zoomin: true, // Toolbar zoom in button
+          zoomout: true, // Toolbar zoom out button
           pan: true,
           reset: true,
         }
       },
       background: 'transparent',
       zoom: { 
-        enabled: true,
+        enabled: true, // Enables scroll and selection zoom
         type: 'x',
         autoScaleYaxis: true,
       },
       animations: {
-        enabled: false // Disable animations for better performance during zoom
+        enabled: true, // Re-enable for smoother zoom, can be set to false if performance issues
+        easing: 'easeinout',
+        speed: 300,
+        animateGradually: {
+            enabled: true,
+            delay: 50
+        },
+        dynamicAnimation: {
+            enabled: true,
+            speed: 200
+        }
       }
     },
     theme: {
@@ -272,6 +312,16 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
           fontSize: '8px',
         },
         datetimeUTC: false, 
+        formatter: function(value, timestamp) {
+          const date = new Date(timestamp || value);
+           // Adjust formatting based on candlestickInterval for clarity on x-axis
+          const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+           if (candlestickInterval.includes('m') || candlestickInterval.includes('h')) {
+             options.hour = 'numeric';
+             options.minute = 'numeric';
+           }
+          return date.toLocaleDateString('en-US', options);
+        }
       },
       axisBorder: {
         show: true,
@@ -301,18 +351,9 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     },
     grid: {
       borderColor: '#1e293b', 
-      row: {
-        colors: undefined, 
-        opacity: 0.5
-      },   
-      column: {
-        colors: undefined,
-        opacity: 0.5
-      },  
-      padding: {
-        left: 5,
-        right: 5
-      }
+      row: { colors: undefined, opacity: 0.5 },   
+      column: { colors: undefined, opacity: 0.5 },  
+      padding: { left: 5, right: 5 }
     },
     plotOptions: {
       candlestick: {
@@ -328,45 +369,36 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     tooltip: {
       theme: 'dark',
       x: {
-        format: 'dd MMM yyyy HH:mm' 
+        formatter: function(val) {
+          const date = new Date(val);
+          return date.toLocaleDateString('en-US', { 
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+          });
+        }
       },
       custom: ({ seriesIndex, dataPointIndex, w }) => {
         const dataPoint = w.config.series[seriesIndex].data[dataPointIndex];
-        const isPrediction = dataPoint.prediction !== null;
+        if (!dataPoint) return '';
+
+        const { x, y, isPrediction, predictionValue } = dataPoint;
         
-        const date = new Date(dataPoint.x);
+        const date = new Date(x);
         const formattedDate = date.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         });
         
-        const [open, high, low, close] = dataPoint.y;
-        const predictionValue = dataPoint.prediction;
+        const [open, high, low, close] = y;
         
         let tooltipContent = `
           <div class="bg-secondary p-2 border border-border rounded shadow-lg text-xs">
             <div class="font-mono">${formattedDate}</div>
-            <div>
-              <span class="font-semibold">Open:</span>
-              <span class="font-mono">${open?.toFixed(2)}</span>
-            </div>
-            <div>
-              <span class="font-semibold">High:</span>
-              <span class="font-mono">${high?.toFixed(2)}</span>
-            </div>
-            <div>
-              <span class="font-semibold">Low:</span>
-              <span class="font-mono">${low?.toFixed(2)}</span>
-            </div>
-            <div>
-              <span class="font-semibold">Close:</span>
-              <span class="font-mono">${close?.toFixed(2)}</span>
-            </div>
+            <div><span class="font-semibold">Open:</span> <span class="font-mono">${open?.toFixed(2)}</span></div>
+            <div><span class="font-semibold">High:</span> <span class="font-mono">${high?.toFixed(2)}</span></div>
+            <div><span class="font-semibold">Low:</span> <span class="font-mono">${low?.toFixed(2)}</span></div>
+            <div><span class="font-semibold">Close:</span> <span class="font-mono">${close?.toFixed(2)}</span></div>
         `;
         
-        if (isPrediction) {
+        if (isPrediction && predictionValue !== null && predictionValue !== undefined) {
           tooltipContent += `
             <div class="text-purple-400">
               <span class="font-semibold">Prediction:</span>
@@ -374,13 +406,11 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
             </div>
           `;
         }
-        
         tooltipContent += `</div>`;
-        
         return tooltipContent;
       }
     },
-    states: {
+    states: { // ... keep existing code (states)
       hover: {
         filter: {
           type: 'none',
@@ -392,37 +422,55 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         }
       }
     },
+    markers: { // For predicted points if needed as distinct markers
+        size: 0, // Default no markers
+        colors: ['#9b87f5'], // Prediction marker color
+        strokeColors: '#fff',
+        strokeWidth: 1,
+        hover: {
+            size: undefined,
+            sizeOffset: 2
+        }
+    },
+    // Styling predicted candlesticks. We mark them in the series data.
+    // ApexCharts doesn't have a direct "predicted candlestick style"
+    // but we can use annotations or try to conditionally color in a custom tooltip / data label.
+    // The `forecastDataPoints` option is more for line/area charts trend lines.
+    // For candlesticks, custom coloring would typically involve manipulating `fillColor` per data point,
+    // which is complex or done via `dataPointColors` function if available, or annotations.
+    // The current approach with 'isPrediction' flag in data can be used with `annotations.points` or `markers`.
     annotations: {
-      points: data
-        .filter(item => item.prediction !== null)
-        .map(item => ({
-          x: item.date.getTime(),
-          y: item.close,
-          marker: {
-            size: 4,
-            fillColor: '#9b87f5',
-            strokeColor: '#9b87f5',
-            strokeWidth: 2,
-          },
-          label: {
-            borderColor: '#9b87f5',
-            style: {
-              color: '#fff',
-              background: '#9b87f5',
-            },
-            text: 'Prediction',
-          }
-        }))
-    },
-    // Custom function to style predicted candlesticks differently
-    // This works with the 'formatter' function in series to change colors
-    forecastDataPoints: {
-      count: 5,
-      fillOpacity: 0.8,
-      strokeWidth: 1,
-      dashArray: 5,
-    },
-  }), [symbol, candlestickInterval, data]);
+        points: data
+          .filter(item => item.prediction !== null)
+          .map((item, index, arr) => {
+            // Highlight the predicted portion of the candle, typically the close or predicted value
+            const yValue = item.prediction!; 
+            return {
+              x: item.date.getTime(),
+              y: yValue, 
+              marker: {
+                size: item.prediction === arr[arr.length -1].prediction ? 5 : 3, // Emphasize last prediction
+                fillColor: '#a855f7', // Purple for prediction
+                strokeColor: '#fff',
+                strokeWidth: 1,
+                shape: 'circle',
+                radius: 2,
+              },
+              label: {
+                borderColor: '#a855f7',
+                offsetY: 0,
+                style: {
+                  color: '#fff',
+                  background: '#a855f7',
+                  fontSize: '8px',
+                  padding: { left: 3, right: 3, top: 1, bottom: 1 }
+                },
+                text: `Pred: ${yValue.toFixed(2)}`,
+              }
+            };
+          })
+      },
+  }), [symbol, candlestickInterval, data]); // Added data to dependency array for annotations
 
   return (
     <div className="w-full h-full chart-container flex flex-col">
@@ -446,7 +494,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       </div>
 
       {chartType === "candlestick" && (
-        <div className="absolute top-1 right-1 md:top-2 md:right-2 z-10 flex flex-col gap-1 items-center">
+        <div className="absolute top-1 right-1 md:top-2 md:right-2 z-10 flex flex-col gap-1 items-end"> {/* Align items-end */}
           <div className="flex gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-md">
             {candlestickIntervals.map((item) => (
               <Button
@@ -460,12 +508,14 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               </Button>
             ))}
           </div>
+          {/* Custom Zoom Buttons */}
           <div className="flex gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-md">
             <Button
               variant="outline"
               size="sm"
               className="h-7 w-7 p-0"
               onClick={handleZoomIn}
+              aria-label="Zoom In"
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
@@ -474,6 +524,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               size="sm"
               className="h-7 w-7 p-0"
               onClick={handleZoomOut}
+              aria-label="Zoom Out"
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -507,14 +558,14 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                 axisLine={{ stroke: '#1e293b' }}
                 tickLine={{ stroke: '#1e293b' }}
                 interval="preserveStartEnd"
-                minTickGap={5}
+                minTickGap={20} // Increased minTickGap for better readability
               />
               <YAxis 
                 domain={yMin && yMax ? [yMin, yMax] : ['auto', 'auto']} 
                 tick={{ fill: '#94a3b8', fontSize: 8 }}
                 axisLine={{ stroke: '#1e293b' }}
                 tickLine={{ stroke: '#1e293b' }}
-                width={30}
+                width={35} // Slightly increased width for Y-axis labels
               />
               <Tooltip content={<CustomRechartsTooltip />} />
               <Area 
@@ -524,15 +575,17 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                 fillOpacity={1} 
                 fill="url(#colorClose)" 
                 strokeWidth={1.5}
+                connectNulls // Connect lines even if there are nulls (e.g. for prediction gaps)
               />
               <Area 
                 type="monotone" 
                 dataKey="prediction" 
-                stroke="#6366f1"
+                stroke="#a855f7" // Changed to purple to match candlestick prediction
                 strokeDasharray="3 3"
                 fillOpacity={1} 
-                fill="url(#colorPrediction)" 
+                fill="url(#colorPrediction)" // Needs a new gradient or adjust existing one
                 strokeWidth={1.5}
+                connectNulls
               />
               {currentPrice !== null && (
                 <ReferenceLine 
@@ -573,14 +626,16 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               axisLine={{ stroke: '#1e293b' }}
               tickLine={{ stroke: '#1e293b' }}
               interval="preserveStartEnd"
-              minTickGap={5}
+              minTickGap={20} // Increased minTickGap for better readability
             />
             <YAxis 
               tick={{ fill: '#94a3b8', fontSize: 8 }}
               axisLine={{ stroke: '#1e293b' }}
               tickLine={{ stroke: '#1e293b' }}
-              width={30}
-              domain={yMin && yMax ? [yMin, yMax] : ['auto', 'auto']}
+              width={35} // Slightly increased width
+              domain={['auto', 'auto']} // Simpler domain for volume, let Recharts decide based on data
+              // Allow Recharts to format volume ticks automatically or provide a custom formatter if needed
+              // formatter={(value: number) => value > 1000000 ? `${(value/1000000).toFixed(1)}M` : `${(value/1000).toFixed(0)}K`}
             />
             <Tooltip content={<CustomRechartsTooltip />} />
             <Bar 
