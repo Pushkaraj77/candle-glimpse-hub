@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react"; // Added useMemo
+import { useEffect, useState, useMemo } from "react";
 import ReactApexChart from "react-apexcharts";
 import { 
   AreaChart, 
@@ -18,13 +18,20 @@ const generateMockCandlestickData = (days: number = 30) => {
   const data = [];
   let basePrice = 150; // Starting price
   
+  // Using a fixed seed for Math.random for consistent "static" data for now
+  let seed = 1;
+  function seededRandom() {
+    const x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+  }
+
   for (let i = 0; i < days; i++) {
-    const volatility = Math.random() * 5; // Random volatility for the day
+    const volatility = seededRandom() * 5; // Random volatility for the day
     const open = basePrice;
-    const close = basePrice + (Math.random() - 0.5) * volatility;
-    const high = Math.max(open, close) + Math.random() * volatility;
-    const low = Math.min(open, close) - Math.random() * volatility;
-    const volume = Math.floor(Math.random() * 10000000) + 1000000; // Random volume
+    const close = basePrice + (seededRandom() - 0.5) * volatility;
+    const high = Math.max(open, close) + seededRandom() * volatility;
+    const low = Math.min(open, close) - seededRandom() * volatility;
+    const volume = Math.floor(seededRandom() * 10000000) + 1000000; // Random volume
     
     const dateObj = new Date();
     dateObj.setDate(dateObj.getDate() - (days - i));
@@ -36,7 +43,7 @@ const generateMockCandlestickData = (days: number = 30) => {
       high,
       low,
       volume,
-      prediction: i > days - 5 ? close + (Math.random() - 0.3) * volatility : null
+      prediction: i > days - 5 ? close + (seededRandom() - 0.3) * volatility : null
     });
     
     basePrice = close;
@@ -169,6 +176,9 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         show: false, 
       },
       background: 'transparent',
+      zoom: { // Added zoom configuration
+        enabled: false,
+      },
     },
     theme: {
       mode: 'dark' 
@@ -200,8 +210,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       }
     },
     yaxis: {
-      min: yMin, // Dynamic min based on data
-      max: yMax, // Dynamic max based on data
+      tickAmount: 5, // Added tickAmount
       tooltip: {
         enabled: true
       },
@@ -249,7 +258,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         format: 'dd MMM yyyy HH:mm' 
       }
     },
-  }), [symbol, yMin, yMax]); // Dependencies for options
+  }), [symbol]); // Removed yMin, yMax from dependencies
 
   return (
     <div className="w-full h-full chart-container flex flex-col">
@@ -273,8 +282,9 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       </div>
 
       <div className="flex-grow h-[70%] pt-12 md:pt-16">
-        <ResponsiveContainer width="100%" height="100%">
-          {chartType === "line" ? (
+        {/* Removed ResponsiveContainer for candlestick, Recharts still uses it */}
+        {chartType === "line" ? (
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
               margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
@@ -338,7 +348,9 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                 />
               )}
             </AreaChart>
-          ) : ( // Candlestick chart using ApexCharts
+          </ResponsiveContainer>
+        ) : ( // Candlestick chart using ApexCharts
+          <div style={{ height: 400 }}> {/* Fixed height wrapper */}
             <ReactApexChart 
               options={apexCandlestickOptions} // Use memoized options
               series={apexCandlestickSeries} // Use memoized series
@@ -346,8 +358,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               height="100%" 
               width="100%"
             />
-          )}
-        </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       <div className="flex-shrink-0 h-[30%]">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import PriceChart from "./PriceChart";
 import TimeSelector from "./TimeSelector";
@@ -41,7 +40,7 @@ const ChartContainer = ({ symbol }: ChartContainerProps) => {
           />
         </div>
       </div>
-      <div className="flex-1 min-h-0"> {/* Critical for PriceChart to get proper height */}
+      <div className="flex-1 min-h-0 max-h-screen"> {/* Added max-h-screen */}
         <PriceChart symbol={symbol} interval={interval} chartType={chartType} />
       </div>
     </div>
