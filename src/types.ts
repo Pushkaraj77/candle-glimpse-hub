@@ -6,3 +6,9 @@ export interface Symbol {
   change: number;
   changePercent: number;
 }
+
+// New interface for candlestick interval
+export interface CandlestickInterval {
+  label: string;
+  value: string;
+}

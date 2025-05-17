@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useMemo } from "react";
 import ReactApexChart from "react-apexcharts";
 import { 
@@ -12,9 +13,12 @@ import {
   BarChart,
   Bar
 } from "recharts";
+import { ZoomIn, ZoomOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CandlestickInterval } from "@/types";
 
 // Updated to take symbol for data variation
-const generateMockCandlestickData = (days: number = 30, symbol: string) => {
+const generateMockCandlestickData = (days: number = 30, symbol: string, candlestickInterval: string) => {
   const data = [];
   
   let initialSeed = 1;
@@ -23,10 +27,18 @@ const generateMockCandlestickData = (days: number = 30, symbol: string) => {
     initialSeed = (initialSeed * 31 + symbol.charCodeAt(i) + (i+1) * 7) & 0xFFFFFFFF;
   }
   
+  // Add interval to the seed calculation to ensure different data for different intervals
+  const intervalSeed = candlestickInterval === '15m' ? 15 : 
+                      candlestickInterval === '30m' ? 30 :
+                      candlestickInterval === '1h' ? 60 :
+                      candlestickInterval === '4h' ? 240 :
+                      candlestickInterval === '1d' ? 1440 : 120;
+                      
+  initialSeed = (initialSeed * intervalSeed) & 0xFFFFFFFF;
+  
   let basePrice = 100 + (initialSeed % 150); // Vary base price with symbol
   if (basePrice < 50) basePrice = 50 + (initialSeed % 50); // Ensure base price isn't too low
   if (basePrice > 250) basePrice = 200 + (initialSeed % 50); // Ensure base price isn't too high
-
 
   let currentSeed = initialSeed;
   function seededRandom() {
@@ -35,8 +47,14 @@ const generateMockCandlestickData = (days: number = 30, symbol: string) => {
     return currentSeed / 0xFFFFFFFF;
   }
 
+  // Adjust volatility based on interval - shorter intervals have less volatility
+  const intervalVolatilityFactor = candlestickInterval === '15m' ? 0.6 : 
+                                  candlestickInterval === '30m' ? 0.7 :
+                                  candlestickInterval === '1h' ? 0.8 :
+                                  candlestickInterval === '4h' ? 0.9 : 1.0;
+
   for (let i = 0; i < days; i++) {
-    const volatility = seededRandom() * 4 + 1.5; // Volatility between 1.5 and 5.5
+    const volatility = (seededRandom() * 4 + 1.5) * intervalVolatilityFactor; // Volatility between 1.5 and 5.5, adjusted
     const trend = (seededRandom() - 0.49); // Slight trend possibility
     
     const open = basePrice;
@@ -81,8 +99,10 @@ interface PriceChartProps {
 }
 
 const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
-  const [data, setData] = useState(() => generateMockCandlestickData(30, symbol)); // Initial data generation with symbol
+  const [candlestickInterval, setCandlestickInterval] = useState<string>("1h");
+  const [data, setData] = useState(() => generateMockCandlestickData(30, symbol, candlestickInterval)); // Initial data generation with symbol
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
   
   useEffect(() => {
     const daysCount = 
@@ -93,14 +113,14 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       interval === '6m' ? 180 : 
       interval === '1y' ? 250 : 365;
     
-    // Pass symbol to generateMockCandlestickData
-    const newMockData = generateMockCandlestickData(daysCount, symbol);
+    // Pass symbol and candlestickInterval to generateMockCandlestickData
+    const newMockData = generateMockCandlestickData(daysCount, symbol, candlestickInterval);
     setData(newMockData);
     
     if (newMockData.length > 0) {
       setCurrentPrice(newMockData[newMockData.length - 1].close);
     }
-  }, [symbol, interval]);
+  }, [symbol, interval, candlestickInterval]);
 
   // Custom tooltip component for the Recharts (Line/Area chart)
   const CustomRechartsTooltip = ({ active, payload, label }: any) => {
@@ -186,27 +206,58 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     name: 'Candlestick',
     data: data.map(item => ({
       x: item.date.getTime(), // ApexCharts expects timestamp for datetime x-axis
-      y: [item.open, item.high, item.low, item.close]
+      y: [item.open, item.high, item.low, item.close],
+      prediction: item.prediction // Add prediction data to be used for styling
     }))
   }], [data]);
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev * 1.5, 5)); // Limit max zoom
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev / 1.5, 0.5)); // Limit min zoom
+  };
+
+  const candlestickIntervals: CandlestickInterval[] = [
+    { label: "15m", value: "15m" },
+    { label: "30m", value: "30m" },
+    { label: "1h", value: "1h" },
+    { label: "4h", value: "4h" },
+    { label: "1d", value: "1d" },
+  ];
 
   const apexCandlestickOptions: ApexCharts.ApexOptions = useMemo(() => ({
     chart: {
       type: 'candlestick',
       height: '100%', 
       toolbar: {
-        show: false, 
+        show: true, 
+        tools: {
+          download: false,
+          selection: true,
+          zoom: true,
+          zoomin: true,
+          zoomout: true,
+          pan: true,
+          reset: true,
+        }
       },
       background: 'transparent',
       zoom: { 
-        enabled: false,
+        enabled: true,
+        type: 'x',
+        autoScaleYaxis: true,
       },
+      animations: {
+        enabled: false // Disable animations for better performance during zoom
+      }
     },
     theme: {
       mode: 'dark' 
     },
     title: {
-      text: `${symbol} Candlestick Chart`, 
+      text: `${symbol} Candlestick Chart (${candlestickInterval})`, 
       align: 'left',
       style: {
         color: '#e0e0e0', 
@@ -278,9 +329,100 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       theme: 'dark',
       x: {
         format: 'dd MMM yyyy HH:mm' 
+      },
+      custom: ({ seriesIndex, dataPointIndex, w }) => {
+        const dataPoint = w.config.series[seriesIndex].data[dataPointIndex];
+        const isPrediction = dataPoint.prediction !== null;
+        
+        const date = new Date(dataPoint.x);
+        const formattedDate = date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        const [open, high, low, close] = dataPoint.y;
+        const predictionValue = dataPoint.prediction;
+        
+        let tooltipContent = `
+          <div class="bg-secondary p-2 border border-border rounded shadow-lg text-xs">
+            <div class="font-mono">${formattedDate}</div>
+            <div>
+              <span class="font-semibold">Open:</span>
+              <span class="font-mono">${open?.toFixed(2)}</span>
+            </div>
+            <div>
+              <span class="font-semibold">High:</span>
+              <span class="font-mono">${high?.toFixed(2)}</span>
+            </div>
+            <div>
+              <span class="font-semibold">Low:</span>
+              <span class="font-mono">${low?.toFixed(2)}</span>
+            </div>
+            <div>
+              <span class="font-semibold">Close:</span>
+              <span class="font-mono">${close?.toFixed(2)}</span>
+            </div>
+        `;
+        
+        if (isPrediction) {
+          tooltipContent += `
+            <div class="text-purple-400">
+              <span class="font-semibold">Prediction:</span>
+              <span class="font-mono">${predictionValue?.toFixed(2)}</span>
+            </div>
+          `;
+        }
+        
+        tooltipContent += `</div>`;
+        
+        return tooltipContent;
       }
     },
-  }), [symbol]);
+    states: {
+      hover: {
+        filter: {
+          type: 'none',
+        }
+      },
+      active: {
+        filter: {
+          type: 'none',
+        }
+      }
+    },
+    annotations: {
+      points: data
+        .filter(item => item.prediction !== null)
+        .map(item => ({
+          x: item.date.getTime(),
+          y: item.close,
+          marker: {
+            size: 4,
+            fillColor: '#9b87f5',
+            strokeColor: '#9b87f5',
+            strokeWidth: 2,
+          },
+          label: {
+            borderColor: '#9b87f5',
+            style: {
+              color: '#fff',
+              background: '#9b87f5',
+            },
+            text: 'Prediction',
+          }
+        }))
+    },
+    // Custom function to style predicted candlesticks differently
+    // This works with the 'formatter' function in series to change colors
+    forecastDataPoints: {
+      count: 5,
+      fillOpacity: 0.8,
+      strokeWidth: 1,
+      dashArray: 5,
+    },
+  }), [symbol, candlestickInterval, data]);
 
   return (
     <div className="w-full h-full chart-container flex flex-col">
@@ -302,6 +444,42 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
           })}
         </p>
       </div>
+
+      {chartType === "candlestick" && (
+        <div className="absolute top-1 right-1 md:top-2 md:right-2 z-10 flex flex-col gap-1 items-center">
+          <div className="flex gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-md">
+            {candlestickIntervals.map((item) => (
+              <Button
+                key={item.value}
+                variant={candlestickInterval === item.value ? "default" : "outline"}
+                size="sm"
+                className="h-6 px-2 py-0 text-xs"
+                onClick={() => setCandlestickInterval(item.value)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <div className="flex gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-md">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={handleZoomIn}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={handleZoomOut}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-grow h-[70%] pt-12 md:pt-16">
         {/* Removed ResponsiveContainer for candlestick, Recharts still uses it */}
@@ -372,7 +550,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
             </AreaChart>
           </ResponsiveContainer>
         ) : ( // Candlestick chart using ApexCharts
-          <div style={{ height: '100%', minHeight: '300px' }}> {/* Ensure wrapper has height for ApexChart */}
+          <div style={{ height: "100%", minHeight: "300px" }}> {/* Ensure wrapper has height for ApexChart */}
             <ReactApexChart 
               options={apexCandlestickOptions} // Use memoized options
               series={apexCandlestickSeries} // Use memoized series
