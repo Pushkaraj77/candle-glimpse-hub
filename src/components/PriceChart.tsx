@@ -13,40 +13,62 @@ import {
   Bar
 } from "recharts";
 
-// Mock data for candlestick chart
-const generateMockCandlestickData = (days: number = 30) => {
+// Updated to take symbol for data variation
+const generateMockCandlestickData = (days: number = 30, symbol: string) => {
   const data = [];
-  let basePrice = 150; // Starting price
   
-  // Using a fixed seed for Math.random for consistent "static" data for now
-  let seed = 1;
+  let initialSeed = 1;
+  for (let i = 0; i < symbol.length; i++) {
+    // Simple hash to vary seed based on symbol
+    initialSeed = (initialSeed * 31 + symbol.charCodeAt(i) + (i+1) * 7) & 0xFFFFFFFF;
+  }
+  
+  let basePrice = 100 + (initialSeed % 150); // Vary base price with symbol
+  if (basePrice < 50) basePrice = 50 + (initialSeed % 50); // Ensure base price isn't too low
+  if (basePrice > 250) basePrice = 200 + (initialSeed % 50); // Ensure base price isn't too high
+
+
+  let currentSeed = initialSeed;
   function seededRandom() {
-    const x = Math.sin(seed++) * 10000;
-    return x - Math.floor(x);
+    // LCG to generate pseudo-random numbers
+    currentSeed = (1664525 * currentSeed + 1013904223) & 0xFFFFFFFF;
+    return currentSeed / 0xFFFFFFFF;
   }
 
   for (let i = 0; i < days; i++) {
-    const volatility = seededRandom() * 5; // Random volatility for the day
+    const volatility = seededRandom() * 4 + 1.5; // Volatility between 1.5 and 5.5
+    const trend = (seededRandom() - 0.49); // Slight trend possibility
+    
     const open = basePrice;
-    const close = basePrice + (seededRandom() - 0.5) * volatility;
-    const high = Math.max(open, close) + seededRandom() * volatility;
-    const low = Math.min(open, close) - seededRandom() * volatility;
-    const volume = Math.floor(seededRandom() * 10000000) + 1000000; // Random volume
+    let close = basePrice + trend * volatility;
+    if (close <= 0.1) close = open * (0.95 + seededRandom() * 0.1); // Prevent zero or negative close
+
+    const highRoll = seededRandom();
+    const lowRoll = seededRandom();
+
+    let high = Math.max(open, close) + highRoll * volatility * 0.6;
+    let low = Math.min(open, close) - lowRoll * volatility * 0.6;
+
+    if (low <= 0.1) low = Math.min(open, close) * 0.9; // Prevent zero or negative low
+    if (high <= low) high = low + 0.01; // Ensure high > low
+
+    const volume = Math.floor(seededRandom() * 10000000) + 1000000; 
     
     const dateObj = new Date();
     dateObj.setDate(dateObj.getDate() - (days - i));
     
     data.push({
-      date: dateObj, // Store as Date object
-      open,
-      close,
-      high,
-      low,
+      date: dateObj,
+      open: parseFloat(open.toFixed(2)),
+      close: parseFloat(close.toFixed(2)),
+      high: parseFloat(high.toFixed(2)),
+      low: parseFloat(low.toFixed(2)),
       volume,
-      prediction: i > days - 5 ? close + (seededRandom() - 0.3) * volatility : null
+      prediction: i > days - 5 ? parseFloat((close + (seededRandom() - 0.3) * volatility).toFixed(2)) : null
     });
     
     basePrice = close;
+    if (basePrice <= 0.1) basePrice = (initialSeed % 10) + 1; // Reset base price if it crashes hard
   }
   
   return data;
@@ -58,21 +80,21 @@ interface PriceChartProps {
   chartType: "candlestick" | "line";
 }
 
-// Removed CandlestickShape and CustomCandlestickItem as they were for Recharts
-
 const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
-  const [data, setData] = useState(generateMockCandlestickData());
+  const [data, setData] = useState(() => generateMockCandlestickData(30, symbol)); // Initial data generation with symbol
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   
   useEffect(() => {
-    const newMockData = generateMockCandlestickData(
+    const daysCount = 
       interval === '1d' ? 30 : 
       interval === '1w' ? 60 : 
       interval === '1m' ? 90 : 
       interval === '3m' ? 120 : 
       interval === '6m' ? 180 : 
-      interval === '1y' ? 250 : 365
-    );
+      interval === '1y' ? 250 : 365;
+    
+    // Pass symbol to generateMockCandlestickData
+    const newMockData = generateMockCandlestickData(daysCount, symbol);
     setData(newMockData);
     
     if (newMockData.length > 0) {
@@ -93,28 +115,28 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
           <p className="font-mono">{dateLabel}</p>
           <p>
             <span className="font-semibold">Open:</span>{" "}
-            <span className="font-mono">{entry.open.toFixed(2)}</span>
+            <span className="font-mono">{entry.open?.toFixed(2)}</span>
           </p>
           <p>
             <span className="font-semibold">High:</span>{" "}
-            <span className="font-mono">{entry.high.toFixed(2)}</span>
+            <span className="font-mono">{entry.high?.toFixed(2)}</span>
           </p>
           <p>
             <span className="font-semibold">Low:</span>{" "}
-            <span className="font-mono">{entry.low.toFixed(2)}</span>
+            <span className="font-mono">{entry.low?.toFixed(2)}</span>
           </p>
           <p>
             <span className="font-semibold">Close:</span>{" "}
-            <span className="font-mono">{entry.close.toFixed(2)}</span>
+            <span className="font-mono">{entry.close?.toFixed(2)}</span>
           </p>
           <p>
             <span className="font-semibold">Volume:</span>{" "}
-            <span className="font-mono">{entry.volume.toLocaleString()}</span>
+            <span className="font-mono">{entry.volume?.toLocaleString()}</span>
           </p>
           {entry.prediction && (
             <p className="text-chart-prediction">
               <span className="font-semibold">Prediction:</span>{" "}
-              <span className="font-mono">{entry.prediction.toFixed(2)}</span>
+              <span className="font-mono">{entry.prediction?.toFixed(2)}</span>
             </p>
           )}
         </div>
@@ -176,7 +198,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         show: false, 
       },
       background: 'transparent',
-      zoom: { // Added zoom configuration
+      zoom: { 
         enabled: false,
       },
     },
@@ -184,7 +206,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       mode: 'dark' 
     },
     title: {
-      text: `${symbol} Candlestick Chart`, // Dynamic title
+      text: `${symbol} Candlestick Chart`, 
       align: 'left',
       style: {
         color: '#e0e0e0', 
@@ -210,7 +232,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       }
     },
     yaxis: {
-      tickAmount: 5, // Added tickAmount
+      tickAmount: 5, 
       tooltip: {
         enabled: true
       },
@@ -258,13 +280,13 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
         format: 'dd MMM yyyy HH:mm' 
       }
     },
-  }), [symbol]); // Removed yMin, yMax from dependencies
+  }), [symbol]);
 
   return (
     <div className="w-full h-full chart-container flex flex-col">
       <div className="absolute top-1 left-1 md:top-2 md:left-2 z-10">
         <h3 className="text-sm md:text-lg font-bold">{symbol}</h3>
-        {currentPrice && (
+        {currentPrice !== null && (
           <p className="text-lg md:text-2xl font-mono font-semibold">
             ${currentPrice.toFixed(2)}
           </p>
@@ -310,7 +332,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                 minTickGap={5}
               />
               <YAxis 
-                domain={['auto', 'auto']} 
+                domain={yMin && yMax ? [yMin, yMax] : ['auto', 'auto']} 
                 tick={{ fill: '#94a3b8', fontSize: 8 }}
                 axisLine={{ stroke: '#1e293b' }}
                 tickLine={{ stroke: '#1e293b' }}
@@ -334,7 +356,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
                 fill="url(#colorPrediction)" 
                 strokeWidth={1.5}
               />
-              {currentPrice && (
+              {currentPrice !== null && (
                 <ReferenceLine 
                   y={currentPrice} 
                   stroke="#94a3b8" 
@@ -350,7 +372,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
             </AreaChart>
           </ResponsiveContainer>
         ) : ( // Candlestick chart using ApexCharts
-          <div style={{ height: 400 }}> {/* Fixed height wrapper */}
+          <div style={{ height: '100%', minHeight: '300px' }}> {/* Ensure wrapper has height for ApexChart */}
             <ReactApexChart 
               options={apexCandlestickOptions} // Use memoized options
               series={apexCandlestickSeries} // Use memoized series
@@ -380,6 +402,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               axisLine={{ stroke: '#1e293b' }}
               tickLine={{ stroke: '#1e293b' }}
               width={30}
+              domain={yMin && yMax ? [yMin, yMax] : ['auto', 'auto']}
             />
             <Tooltip content={<CustomRechartsTooltip />} />
             <Bar 
