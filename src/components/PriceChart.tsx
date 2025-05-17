@@ -125,10 +125,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     const totalDurationMinutes = overallIntervalDays * 24 * 60;
     let numberOfCandles = Math.floor(totalDurationMinutes / candlestickIntervalMinutes);
     
-    // Ensure a minimum number of candles, e.g., for "1d" overall and "1d" candlestick.
-    // And a maximum to prevent performance issues with very short candle intervals over long periods.
     numberOfCandles = Math.max(1, numberOfCandles); 
-    numberOfCandles = Math.min(1000, numberOfCandles); // Cap at 1000 candles
+    numberOfCandles = Math.min(1000, numberOfCandles); 
 
     const newMockData = generateMockCandlestickData(numberOfCandles, symbol, candlestickInterval);
     setData(newMockData);
@@ -237,14 +235,14 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   }], [data]);
 
   const handleZoomIn = () => {
-    if (window.ApexCharts) {
-      window.ApexCharts.exec(CHART_ID, 'zoomIn');
+    if ((window as any).ApexCharts) {
+      (window as any).ApexCharts.exec(CHART_ID, 'zoomIn');
     }
   };
 
   const handleZoomOut = () => {
-    if (window.ApexCharts) {
-      window.ApexCharts.exec(CHART_ID, 'zoomOut');
+    if ((window as any).ApexCharts) {
+      (window as any).ApexCharts.exec(CHART_ID, 'zoomOut');
     }
   };
 
