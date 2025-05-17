@@ -1,6 +1,5 @@
-
-import { useEffect, useState } from "react";
-import ReactApexChart from "react-apexcharts"; // Import ApexCharts
+import { useEffect, useState, useMemo } from "react"; // Added useMemo
+import ReactApexChart from "react-apexcharts";
 import { 
   AreaChart, 
   Area, 
@@ -12,7 +11,6 @@ import {
   ReferenceLine,
   BarChart,
   Bar
-  // ComposedChart, Line, Scatter, Rectangle removed as candlestick will use ApexCharts
 } from "recharts";
 
 // Mock data for candlestick chart
@@ -126,32 +124,60 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     return String(date); // Fallback
   };
 
+  const { yMin, yMax } = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { yMin: undefined, yMax: undefined }; // Default if no data
+    }
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+
+    data.forEach(item => {
+      if (item.low < minPrice) minPrice = item.low;
+      if (item.high > maxPrice) maxPrice = item.high;
+    });
+
+    const paddingPercentage = 0.10; // 10% total padding (5% top, 5% bottom)
+    const range = maxPrice - minPrice;
+    // Add a small fixed padding if all data points are the same, otherwise use percentage
+    const paddingValue = range === 0 ? 10 : range * paddingPercentage; 
+
+    const finalMin = Math.floor(minPrice - paddingValue / 2);
+    const finalMax = Math.ceil(maxPrice + paddingValue / 2);
+    
+    // Ensure min and max are not the same if all data points were identical after padding calc
+    if (finalMin === finalMax) {
+        return { yMin: finalMin - 5, yMax: finalMax + 5}; // Add a bit more fixed padding
+    }
+
+    return { yMin: finalMin, yMax: finalMax };
+  }, [data]);
+
   // ApexCharts options and series for candlestick
-  const apexCandlestickSeries = [{
+  const apexCandlestickSeries = useMemo(() => [{
     name: 'Candlestick',
     data: data.map(item => ({
       x: item.date.getTime(), // ApexCharts expects timestamp for datetime x-axis
       y: [item.open, item.high, item.low, item.close]
     }))
-  }];
+  }], [data]);
 
-  const apexCandlestickOptions: ApexCharts.ApexOptions = {
+  const apexCandlestickOptions: ApexCharts.ApexOptions = useMemo(() => ({
     chart: {
       type: 'candlestick',
-      height: '100%', // Fill container
+      height: '100%', 
       toolbar: {
-        show: false, // Hide toolbar for cleaner look
+        show: false, 
       },
       background: 'transparent',
     },
     theme: {
-      mode: 'dark' // Assuming a dark theme, adjust if needed
+      mode: 'dark' 
     },
     title: {
-      text: `${symbol} Candlestick Chart`,
+      text: `${symbol} Candlestick Chart`, // Dynamic title
       align: 'left',
       style: {
-        color: '#e0e0e0', // Light color for dark theme
+        color: '#e0e0e0', 
         fontSize: '12px',
       }
     },
@@ -159,10 +185,10 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       type: 'datetime',
       labels: {
         style: {
-          colors: '#94a3b8', // Muted foreground for ticks
+          colors: '#94a3b8', 
           fontSize: '8px',
         },
-        datetimeUTC: false, // Display in local time
+        datetimeUTC: false, 
       },
       axisBorder: {
         show: true,
@@ -174,6 +200,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       }
     },
     yaxis: {
+      min: yMin, // Dynamic min based on data
+      max: yMax, // Dynamic max based on data
       tooltip: {
         enabled: true
       },
@@ -190,9 +218,9 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       },
     },
     grid: {
-      borderColor: '#1e293b', // Match CartesianGrid stroke
+      borderColor: '#1e293b', 
       row: {
-        colors: undefined, // Keep default or transparent
+        colors: undefined, 
         opacity: 0.5
       },   
       column: {
@@ -207,8 +235,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     plotOptions: {
       candlestick: {
         colors: {
-          upward: '#22c55e', // Green for rising
-          downward: '#ef4444' // Red for falling
+          upward: '#22c55e', 
+          downward: '#ef4444' 
         },
         wick: {
           useFillColor: true,
@@ -218,14 +246,10 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     tooltip: {
       theme: 'dark',
       x: {
-        format: 'dd MMM yyyy HH:mm' // Date format in tooltip
+        format: 'dd MMM yyyy HH:mm' 
       }
     },
-    markers: { // For current price line equivalent, if needed. Apex has annotations for this.
-      // This is a bit more complex with Apex, often done with annotations or yaxis reference lines.
-      // For simplicity, the ReferenceLine is kept with the Recharts AreaChart for now.
-    },
-  };
+  }), [symbol, yMin, yMax]); // Dependencies for options
 
   return (
     <div className="w-full h-full chart-container flex flex-col">
@@ -316,8 +340,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
             </AreaChart>
           ) : ( // Candlestick chart using ApexCharts
             <ReactApexChart 
-              options={apexCandlestickOptions} 
-              series={apexCandlestickSeries} 
+              options={apexCandlestickOptions} // Use memoized options
+              series={apexCandlestickSeries} // Use memoized series
               type="candlestick" 
               height="100%" 
               width="100%"
@@ -344,9 +368,8 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
               axisLine={{ stroke: '#1e293b' }}
               tickLine={{ stroke: '#1e293b' }}
               width={30}
-              // tickFormatter for volume can be added if needed (e.g., 1M, 10K)
             />
-            <Tooltip content={<CustomRechartsTooltip />} /> {/* Still uses Recharts tooltip */}
+            <Tooltip content={<CustomRechartsTooltip />} />
             <Bar 
               dataKey="volume" 
               fill="#4b5563" 
@@ -360,4 +383,3 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
 };
 
 export default PriceChart;
-
