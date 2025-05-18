@@ -6,6 +6,7 @@ import SymbolList from "@/components/SymbolList";
 import ChartContainer from "@/components/ChartContainer";
 import SymbolDetail from "@/components/SymbolDetail";
 import AllSymbolsList from "@/components/AllSymbolsList";
+import DashboardLoader from "@/components/DashboardLoader"; // Import the new loader
 import { Symbol } from "@/types";
 import { 
   ChartCandlestick, 
@@ -15,7 +16,10 @@ import {
   X as MinimizeIcon,
   ChevronDown,
   ChevronUp,
-  Home // Added Home icon
+  Home, // Added Home icon
+  ZoomIn, // Added for ChartContainer controls
+  ZoomOut, // Added for ChartContainer controls
+  Move // Added for ChartContainer controls
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,6 +42,7 @@ const DashboardPage = () => {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams(); // For reading URL query
   const navigate = useNavigate(); // For navigation
+  const [isLoading, setIsLoading] = useState(true); // New loading state
 
   const [watchlistSymbols, setWatchlistSymbols] = useState<Symbol[]>(() => {
     return ALL_AVAILABLE_SYMBOLS.slice(0, 2);
@@ -56,6 +61,14 @@ const DashboardPage = () => {
   const [showSidebar, setShowSidebar] = useState(!isMobile); 
   const [showWatchlistPanel, setShowWatchlistPanel] = useState(!isMobile);
   const [isAllSymbolsOpen, setIsAllSymbolsOpen] = useState(false);
+
+  // Simulate data fetching
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2500); // Simulate a 2.5 second load time
+    return () => clearTimeout(timer);
+  }, []);
 
   // Effect to handle symbol changes from URL query parameters
   useEffect(() => {
@@ -105,7 +118,6 @@ const DashboardPage = () => {
 
     if (foundSymbol) {
       setSelectedSymbol(foundSymbol);
-      // Update URL query parameter
       setSearchParams({ symbol: foundSymbol.symbol });
       if (isMobile) {
         setShowWatchlistPanel(false);
@@ -148,8 +160,7 @@ const DashboardPage = () => {
           setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
           setSearchParams({ symbol: ALL_AVAILABLE_SYMBOLS[0].symbol });
         } else {
-          // TODO: Handle case where no symbols are left at all
-          // For now, selectedSymbol might become invalid if ALL_AVAILABLE_SYMBOLS is also empty
+          // No symbols left
         }
       }
       return newWatchlist;
@@ -157,6 +168,9 @@ const DashboardPage = () => {
     toast({ title: "Removed from Watchlist", description: `${symbolToRemove.symbol} has been removed.` });
   };
 
+  if (isLoading) {
+    return <DashboardLoader />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -166,7 +180,7 @@ const DashboardPage = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="mr-2">
             <Home className="h-5 w-5" />
           </Button>
-          <ChartCandlestick className="h-7 w-7 mr-2 text-primary" />
+          <ChartCandlestick className="h-6 w-6 mr-2 text-primary" /> {/* Adjusted logo size slightly */}
           <h1 className="text-xl font-bold">
             <span className="text-primary">StockTrader</span>
             <span className="text-sky-400"> AI</span>
@@ -185,7 +199,7 @@ const DashboardPage = () => {
             className={`transition-all duration-300 ease-in-out border-border p-2 md:p-4 flex flex-col
               ${isMobile
                 ? showWatchlistPanel ? 'w-full order-1 h-1/2 md:h-auto border-b' : 'hidden' 
-                : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r h-1/2' : 'w-[50px] border-r' 
+                : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r h-auto' : 'w-[50px] border-r' // ensure h-auto for desktop
               }`}
           >
             {showWatchlistPanel || !isMobile ? ( 
@@ -253,7 +267,7 @@ const DashboardPage = () => {
             <Button
               variant="outline"
               size="icon"
-              className=" top-2 left-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
+              className="absolute top-2 left-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
               onClick={() => {setShowWatchlistPanel(true); setShowSidebar(false);}}
               aria-label="Open watchlist panel"
             >
@@ -269,7 +283,7 @@ const DashboardPage = () => {
             className={`transition-all duration-300 ease-in-out border-border
               ${isMobile
                 ? showSidebar ? 'w-full order-3 p-2 md:p-4 border-t h-1/2 md:h-auto' : 'hidden'
-                : showSidebar ? 'w-[280px] md:w-[300px] opacity-100 p-4 border-l' : 'w-0 opacity-0 overflow-hidden' // Adjusted width
+                : showSidebar ? 'w-[280px] md:w-[300px] opacity-100 p-4 border-l h-auto' : 'w-0 opacity-0 overflow-hidden' // ensure h-auto for desktop
               }`}
           >
             {showSidebar && selectedSymbol && (
