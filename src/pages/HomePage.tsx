@@ -1,10 +1,9 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SearchBar from '@/components/SearchBar';
 import HeroStockPreview from '@/components/HeroStockPreview';
-import { BarChartBig, Home, Search as SearchIcon, TrendingUp, Zap, Lightbulb, ShieldCheck, Rocket, Linkedin, Twitter, Github } from 'lucide-react'; // Added Zap, Lightbulb, ShieldCheck, Rocket, Linkedin, Twitter, Github
+import { BarChartBig, Home, Search as SearchIcon, TrendingUp, Zap, Lightbulb, ShieldCheck, Rocket, Linkedin, Twitter, Github } from 'lucide-react';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -17,22 +16,22 @@ const HomePage = () => {
 
   const featureItems = [
     {
-      icon: <Zap className="h-8 w-8 text-primary mb-3" />,
+      icon: <Zap className="h-10 w-10 text-primary mb-4" />,
       title: "AI-Powered Predictions",
       description: "Leverage cutting-edge AI to forecast market trends and make informed decisions.",
     },
     {
-      icon: <BarChartBig className="h-8 w-8 text-primary mb-3" />,
+      icon: <BarChartBig className="h-10 w-10 text-primary mb-4" />,
       title: "Real-Time Data",
       description: "Access up-to-the-minute stock prices, historical data, and comprehensive analytics.",
     },
     {
-      icon: <ShieldCheck className="h-8 w-8 text-primary mb-3" />,
+      icon: <ShieldCheck className="h-10 w-10 text-primary mb-4" />,
       title: "Secure & Reliable",
       description: "Trade with confidence on a platform built with robust security and high availability.",
     },
     {
-      icon: <Lightbulb className="h-8 w-8 text-primary mb-3" />,
+      icon: <Lightbulb className="h-10 w-10 text-primary mb-4" />,
       title: "Actionable Insights",
       description: "Gain clear, actionable insights from complex data, simplified for you.",
     },
@@ -80,12 +79,7 @@ const HomePage = () => {
             </Button>
           </nav>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => alert('Sign In clicked!')}>
-              Sign In
-            </Button>
-            <Button variant="secondary" onClick={() => alert('Sign Up clicked!')}>
-              Sign Up
-            </Button>
+            {/* Sign In and Sign Up buttons removed as per request */}
           </div>
         </div>
       </header>
@@ -137,18 +131,22 @@ const HomePage = () => {
         {/* Features Section */}
         <section id="features" className="py-16 md:py-24 bg-secondary/30">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-3">Why Choose StockTrader?</h2>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose StockTrader?</h2>
               <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto">
                 Our platform is packed with features designed to give you a trading edge.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {featureItems.map((item, index) => (
-                <div key={index} className="bg-background/50 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center animate-fade-in" style={{animationDelay: `${index * 150}ms`}}>
-                  <div className="flex justify-center mb-4">{item.icon}</div>
-                  <h3 className="text-xl font-semibold mb-2 text-foreground">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                <div 
+                  key={index} 
+                  className="bg-background/70 p-8 rounded-xl shadow-lg hover:shadow-primary/20 border border-transparent hover:border-primary/30 transition-all duration-300 transform hover:-translate-y-2 text-center animate-fade-in" 
+                  style={{animationDelay: `${index * 150}ms`}}
+                >
+                  <div className="flex justify-center mb-6">{item.icon}</div>
+                  <h3 className="text-xl font-semibold mb-3 text-foreground">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -158,8 +156,8 @@ const HomePage = () => {
         {/* How It Works Section */}
         <section id="how-it-works" className="py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-3">Get Started in 3 Easy Steps</h2>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Get Started in 3 Easy Steps</h2>
               <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">
                 Begin your journey to smarter trading in just a few minutes.
               </p>
@@ -168,16 +166,20 @@ const HomePage = () => {
               {/* Dashed line connector for desktop */}
               <div className="hidden md:block absolute top-1/2 left-0 w-full h-px -translate-y-1/2">
                   <svg width="100%" height="2" className="overflow-visible">
-                    <line x1="15%" y1="1" x2="85%" y2="1" strokeDasharray="5,5" className="stroke-border" strokeWidth="2"/>
+                    <line x1="15%" y1="1" x2="85%" y2="1" strokeDasharray="5,5" className="stroke-border/70" strokeWidth="2"/>
                   </svg>
               </div>
               {howItWorksSteps.map((item, index) => (
-                <div key={index} className="relative bg-secondary/40 p-6 rounded-lg shadow-md text-center animate-fade-in z-10" style={{animationDelay: `${index * 200}ms`}}>
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center text-lg font-bold shadow-lg">
+                <div 
+                  key={index} 
+                  className="relative bg-secondary/60 p-8 rounded-xl shadow-xl text-center animate-fade-in z-10 transform transition-all duration-300 hover:scale-105 hover:shadow-primary/25" 
+                  style={{animationDelay: `${index * 200}ms`}}
+                >
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground h-12 w-12 rounded-full flex items-center justify-center text-xl font-bold shadow-2xl">
                     {item.step}
                   </div>
-                  <h3 className="text-xl font-semibold mt-8 mb-2 text-foreground">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <h3 className="text-xl font-semibold mt-10 mb-3 text-foreground">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -185,21 +187,24 @@ const HomePage = () => {
         </section>
 
         {/* Call to Action Section */}
-        <section className="py-16 md:py-24 bg-primary/5">
+        <section 
+          className="py-20 md:py-28"
+          style={{ background: 'linear-gradient(75deg, hsl(var(--secondary)) 0%, hsl(var(--background) / 0.8) 100%)' }}
+        >
           <div className="container mx-auto px-4 md:px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-primary animate-fade-in">
               Ready to Elevate Your Trading?
             </h2>
-            <p className="text-muted-foreground md:text-lg max-w-xl mx-auto mb-8">
-              Join StockTrader today and harness the power of AI for smarter investment decisions.
+            <p className="text-foreground/80 text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-in animation-delay-200">
+              Join StockTrader today and unlock the future of investment with powerful AI insights, real-time data, and a seamless trading experience.
             </p>
             <Button 
               size="lg" 
-              className="bg-cyan-500 hover:bg-cyan-600 text-cyan-foreground text-base px-10 py-6"
+              className="bg-cyan-500 hover:bg-cyan-600 text-cyan-foreground text-lg px-12 py-7 rounded-lg shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105 transition-all duration-300 animate-fade-in animation-delay-300"
               onClick={() => alert('Sign Up from CTA clicked!')}
             >
               Sign Up For Free
-              <Rocket className="ml-2 h-5 w-5" />
+              <Rocket className="ml-2 h-6 w-6"/>
             </Button>
           </div>
         </section>
