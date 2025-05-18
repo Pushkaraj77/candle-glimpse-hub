@@ -12,7 +12,6 @@ import {
   BarChart,
   Bar
 } from "recharts";
-import { ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CandlestickInterval } from "@/types";
 
@@ -103,15 +102,14 @@ const generateMockCandlestickData = (numCandles: number, symbol: string, candles
 
 interface PriceChartProps {
   symbol: string;
-  interval: string; // This is the overall time range from TimeSelector (e.g., "1d", "1w")
+  interval: string; 
   chartType: "candlestick" | "line";
+  candlestickInterval: string; // Added prop
 }
 
-const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
-  const [candlestickInterval, setCandlestickInterval] = useState<string>("1h"); // Default candlestick duration
-  const [data, setData] = useState(() => generateMockCandlestickData(100, symbol, candlestickInterval));
+const PriceChart = ({ symbol, interval, chartType, candlestickInterval }: PriceChartProps) => {
+  const [data, setData] = useState(() => generateMockCandlestickData(100, symbol, candlestickInterval)); // Use prop here
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  // zoomLevel state is removed as we will use ApexCharts API directly
 
   useEffect(() => {
     const candlestickIntervalMinutes = {
@@ -128,13 +126,13 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     numberOfCandles = Math.max(1, numberOfCandles); 
     numberOfCandles = Math.min(1000, numberOfCandles); 
 
-    const newMockData = generateMockCandlestickData(numberOfCandles, symbol, candlestickInterval);
+    const newMockData = generateMockCandlestickData(numberOfCandles, symbol, candlestickInterval); // Use prop
     setData(newMockData);
     
     if (newMockData.length > 0) {
       setCurrentPrice(newMockData[newMockData.length - 1].close);
     }
-  }, [symbol, interval, candlestickInterval]);
+  }, [symbol, interval, candlestickInterval]); // candlestickInterval is now a prop
 
   // Custom tooltip component for the Recharts (Line/Area chart)
   const CustomRechartsTooltip = ({ active, payload, label }: any) => {
@@ -233,26 +231,6 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
       predictionValue: item.prediction // Add prediction data to be used for styling
     }))
   }], [data]);
-
-  const handleZoomIn = () => {
-    if ((window as any).ApexCharts) {
-      (window as any).ApexCharts.exec(CHART_ID, 'zoomIn');
-    }
-  };
-
-  const handleZoomOut = () => {
-    if ((window as any).ApexCharts) {
-      (window as any).ApexCharts.exec(CHART_ID, 'zoomOut');
-    }
-  };
-
-  const candlestickIntervals: CandlestickInterval[] = [
-    { label: "15m", value: "15m" },
-    { label: "30m", value: "30m" },
-    { label: "1h", value: "1h" },
-    { label: "4h", value: "4h" },
-    { label: "1d", value: "1d" },
-  ];
 
   const apexCandlestickOptions: ApexCharts.ApexOptions = useMemo(() => ({
     chart: {
@@ -490,45 +468,6 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
           })}
         </p>
       </div>
-
-      {chartType === "candlestick" && (
-        <div className="absolute top-1 right-1 md:top-2 md:right-2 z-10 flex flex-col gap-1 items-end"> {/* Align items-end */}
-          <div className="flex gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-md">
-            {candlestickIntervals.map((item) => (
-              <Button
-                key={item.value}
-                variant={candlestickInterval === item.value ? "default" : "outline"}
-                size="sm"
-                className="h-6 px-2 py-0 text-xs"
-                onClick={() => setCandlestickInterval(item.value)}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </div>
-          {/* Custom Zoom Buttons */}
-          <div className="flex gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-md">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={handleZoomIn}
-              aria-label="Zoom In"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={handleZoomOut}
-              aria-label="Zoom Out"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
 
       <div className="flex-grow h-[70%] pt-12 md:pt-16">
         {/* Removed ResponsiveContainer for candlestick, Recharts still uses it */}
