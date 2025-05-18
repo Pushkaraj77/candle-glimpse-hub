@@ -1,3 +1,4 @@
+
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      onSearch(query.toUpperCase()); // Ensure query is uppercase for consistency
+      onSearch(query.toUpperCase());
       setSuggestions([]);
       // setQuery(""); // Optionally clear query after search
     }
@@ -50,29 +51,29 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
 
   const handleSuggestionSelect = (suggestion: typeof mockSymbols[0]) => {
     onSearch(suggestion.symbol);
-    setQuery(suggestion.symbol); // Set query to selected symbol
+    setQuery(suggestion.symbol);
     setSuggestions([]);
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full max-w-xl mx-auto"> {/* Centering and max-width for the search bar */}
       <form onSubmit={handleSubmit} className="relative">
         <Input
           type="text"
-          placeholder="Search symbols (e.g. AAPL)" // Simplified placeholder
+          placeholder="Enter stock symbol (e.g., AAPL, MSFT)" // Updated placeholder
           value={query}
           onChange={handleQueryChange}
-          className="pl-10 pr-4 py-2 w-full bg-secondary text-foreground placeholder:text-muted-foreground/70 rounded-md text-sm" // Adjusted padding and placeholder style
+          className="pl-12 pr-4 py-3 w-full bg-background border-border/70 focus:border-primary transition-colors duration-300 ease-in-out h-14 text-base rounded-lg shadow-sm placeholder:text-muted-foreground/60" // Enhanced styling: larger, prominent, better placeholder
         />
         <button 
           type="submit" 
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
           aria-label="Search"
         >
-          <Search className="h-4 w-4" />
+          <Search className="h-5 w-5" /> {/* Slightly larger icon */}
         </button>
       </form>
-      {suggestions.length > 0 && ( // Conditionally render suggestions
+      {suggestions.length > 0 && (
         <SearchSuggestions 
           suggestions={suggestions} 
           onSelect={handleSuggestionSelect}
