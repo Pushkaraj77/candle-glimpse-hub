@@ -65,10 +65,10 @@ const ChartContainer = ({ symbol }: ChartContainerProps) => {
         </div>
         
         {/* Separator (optional) */}
-        {/* <div className="h-6 w-px bg-border hidden sm:block mx-1"></div> */}
+        <div className="h-6 w-px bg-border hidden sm:block mx-1"></div>
 
         {/* Zoom and Pan Controls */}
-        <div className="flex items-center gap-1">
+        {/* <div className="flex items-center gap-1">
           <Button variant="outline" size="icon" onClick={handleZoomIn} className="h-8 w-8 sm:h-9 sm:w-9 p-1.5">
             <ZoomIn className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
@@ -81,7 +81,7 @@ const ChartContainer = ({ symbol }: ChartContainerProps) => {
           <Button variant="outline" size="icon" onClick={handleResetView} className="h-8 w-8 sm:h-9 sm:w-9 p-1.5">
             <Home className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Price Chart */}

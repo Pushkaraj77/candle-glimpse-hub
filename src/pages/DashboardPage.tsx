@@ -168,8 +168,8 @@ const DashboardPage = () => {
           </Button>
           <ChartCandlestick className="h-7 w-7 mr-2 text-primary" />
           <h1 className="text-xl font-bold">
-            <span className="text-primary">StockVision</span>
-            <span className="text-sky-400"> AI Dashboard</span>
+            <span className="text-primary">StockTrader</span>
+            <span className="text-sky-400"> AI</span>
           </h1>
         </div>
         <div className="w-full md:w-[300px]">
@@ -185,13 +185,12 @@ const DashboardPage = () => {
             className={`transition-all duration-300 ease-in-out border-border p-2 md:p-4 flex flex-col
               ${isMobile
                 ? showWatchlistPanel ? 'w-full order-1 h-1/2 md:h-auto border-b' : 'hidden' 
-                : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r' : 'w-[50px] border-r' 
+                : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r h-1/2' : 'w-[50px] border-r' 
               }`}
           >
             {showWatchlistPanel || !isMobile ? ( 
               <>
-                <div className="flex items-center justify-between mb-1 md:mb-3">
-                  <h2 className="text-lg font-semibold pl-1">Market Lists</h2> 
+                <div className="flex items-center justify-end mb-1 md:mb-3"> 
                   <Button
                     variant="ghost"
                     size="icon"
@@ -254,7 +253,7 @@ const DashboardPage = () => {
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-2 left-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
+              className=" top-2 left-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
               onClick={() => {setShowWatchlistPanel(true); setShowSidebar(false);}}
               aria-label="Open watchlist panel"
             >

@@ -63,7 +63,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           placeholder="Enter stock symbol (e.g., AAPL, MSFT)" // Updated placeholder
           value={query}
           onChange={handleQueryChange}
-          className="pl-12 pr-4 py-3 w-full bg-background border-border/70 focus:border-primary transition-colors duration-300 ease-in-out h-14 text-base rounded-lg shadow-sm placeholder:text-muted-foreground/60" // Enhanced styling: larger, prominent, better placeholder
+          className="pl-12 pr-4 py-2 w-full bg-background border-border/70 focus:border-primary transition-colors duration-300 ease-in-out h-12 text-base rounded-lg shadow-sm placeholder:text-muted-foreground/60" // Enhanced styling: larger, prominent, better placeholder
         />
         <button 
           type="submit" 

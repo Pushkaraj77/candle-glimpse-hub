@@ -48,20 +48,20 @@ const SymbolList = ({ symbols, onSelectSymbol, onRemoveSymbol, selectedSymbolVal
       </CollapsibleTrigger>
       <CollapsibleContent className="flex-1 overflow-y-auto min-h-0">
         {/* Adjusted grid to include remove button column */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_auto] md:grid-cols-[1fr_2fr_1fr_1fr_auto] text-xs font-medium text-muted-foreground p-2 border-y border-border sticky top-0 bg-secondary/80 z-10">
+        <div className="grid gap-2  grid-cols-[2fr_1fr_1fr_auto] md:grid-cols-[1fr_2fr_1fr_1fr_auto] text-xs font-medium text-muted-foreground p-2 border-y border-border sticky top-0 bg-secondary/80 z-10">
           <div className="md:hidden">Symbol/Name</div>
           <div className="hidden md:block">Symbol</div>
           <div className="hidden md:block truncate">Name</div>
-          <div className="text-right">Price</div>
-          <div className="text-right">Change</div>
-          <div className="text-right">Action</div> {/* Header for remove button */}
+          <div className="text-right pl-2">Price</div>
+          <div className="text-right pl-2">Change</div>
+          <div className="text-right pl-2">Action</div> {/* Header for remove button */}
         </div>
         <div> 
           {symbols.map((symbol) => (
             <div 
               key={symbol.symbol}
               onClick={() => handleClick(symbol)}
-              className={`grid grid-cols-[2fr_1fr_1fr_auto] md:grid-cols-[1fr_2fr_1fr_1fr_auto] items-center text-xs md:text-sm p-2 hover:bg-accent cursor-pointer transition-colors duration-200 ${
+              className={`grid gap-2 grid-cols-[2fr_1fr_1fr_auto] md:grid-cols-[1fr_2fr_1fr_1fr_auto] items-center text-xs md:text-sm p-2 hover:bg-accent cursor-pointer transition-colors duration-200 ${
                 selectedSymbolValue === symbol.symbol ? "bg-accent" : ""
               }`}
             >
