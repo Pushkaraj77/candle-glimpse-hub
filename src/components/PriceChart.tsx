@@ -12,7 +12,6 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CandlestickInterval } from "@/types";
 
@@ -124,8 +123,9 @@ const generateMockCandlestickData = (
 
 interface PriceChartProps {
   symbol: string;
-  interval: string; // This is the overall time range from TimeSelector (e.g., "1d", "1w")
+  interval: string; 
   chartType: "candlestick" | "line";
+  candlestickInterval: string; // Added prop
 }
 
 const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
@@ -134,7 +134,6 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     generateMockCandlestickData(100, symbol, candlestickInterval)
   );
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  // zoomLevel state is removed as we will use ApexCharts API directly
 
   useEffect(() => {
     const candlestickIntervalMinutes =
@@ -172,7 +171,7 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     if (newMockData.length > 0) {
       setCurrentPrice(newMockData[newMockData.length - 1].close);
     }
-  }, [symbol, interval, candlestickInterval]);
+  }, [symbol, interval, candlestickInterval]); // candlestickInterval is now a prop
 
   // Custom tooltip component for the Recharts (Line/Area chart)
   const CustomRechartsTooltip = ({ active, payload, label }: any) => {
