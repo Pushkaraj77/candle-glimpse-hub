@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import SearchBar from "@/components/SearchBar";
 import SymbolList from "@/components/SymbolList";
 import ChartContainer from "@/components/ChartContainer";
 import SymbolDetail from "@/components/SymbolDetail";
 import AllSymbolsList from "@/components/AllSymbolsList";
-import DashboardLoader from "@/components/DashboardLoader"; // Import the new loader
+import DashboardLoader from "@/components/DashboardLoader";
 import { Symbol } from "@/types";
 import { 
   ChartCandlestick, 
@@ -16,10 +16,10 @@ import {
   X as MinimizeIcon,
   ChevronDown,
   ChevronUp,
-  Home, // Added Home icon
-  ZoomIn, // Added for ChartContainer controls
-  ZoomOut, // Added for ChartContainer controls
-  Move // Added for ChartContainer controls
+  Home,
+  // ZoomIn, // No longer directly used here
+  // ZoomOut, // No longer directly used here
+  // Move // No longer directly used here
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,15 +40,15 @@ const ALL_AVAILABLE_SYMBOLS: Symbol[] = [
 const DashboardPage = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams(); // For reading URL query
-  const navigate = useNavigate(); // For navigation
-  const [isLoading, setIsLoading] = useState(true); // New loading state
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true); // For initial page load
+  const [isSymbolLoading, setIsSymbolLoading] = useState(false); // For subsequent symbol changes
 
   const [watchlistSymbols, setWatchlistSymbols] = useState<Symbol[]>(() => {
     return ALL_AVAILABLE_SYMBOLS.slice(0, 2);
   });
 
-  // Initialize selectedSymbol: try URL, then first of watchlist, then first of all available
   const [selectedSymbol, setSelectedSymbol] = useState<Symbol>(() => {
     const symbolFromUrl = searchParams.get('symbol');
     if (symbolFromUrl) {
@@ -62,13 +62,26 @@ const DashboardPage = () => {
   const [showWatchlistPanel, setShowWatchlistPanel] = useState(!isMobile);
   const [isAllSymbolsOpen, setIsAllSymbolsOpen] = useState(false);
 
-  // Simulate data fetching
+  // Effect for initial page load
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2500); // Simulate a 2.5 second load time
+    }, 2500); 
     return () => clearTimeout(timer);
   }, []);
+
+  // Effect to turn off symbol loading after a short delay
+  useEffect(() => {
+    let timerId: NodeJS.Timeout | undefined;
+    if (isSymbolLoading && !isLoading) { // Only if symbol loading is active and initial load is done
+      timerId = setTimeout(() => {
+        setIsSymbolLoading(false);
+      }, 750); // Short delay for symbol switch
+    }
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [isSymbolLoading, isLoading]);
 
   // Effect to handle symbol changes from URL query parameters
   useEffect(() => {
@@ -78,7 +91,8 @@ const DashboardPage = () => {
         (s) => s.symbol.toLowerCase() === symbolFromQuery.toLowerCase()
       );
       if (foundSymbol) {
-        if (selectedSymbol.symbol !== foundSymbol.symbol) { // Only update if different
+        if (selectedSymbol?.symbol !== foundSymbol.symbol) {
+          if (!isLoading) setIsSymbolLoading(true);
           setSelectedSymbol(foundSymbol);
         }
       } else {
@@ -87,16 +101,22 @@ const DashboardPage = () => {
           title: "Symbol Not Found",
           description: `Could not find data for symbol "${symbolFromQuery}" from URL. Displaying default.`,
         });
-        // Optionally remove the invalid symbol from URL or navigate to default
-        // For now, it will just show default based on initial state logic if symbolFromQuery is bad
-        if (watchlistSymbols.length > 0 && selectedSymbol.symbol !== watchlistSymbols[0].symbol) {
-            setSelectedSymbol(watchlistSymbols[0]);
-        } else if (ALL_AVAILABLE_SYMBOLS.length > 0 && selectedSymbol.symbol !== ALL_AVAILABLE_SYMBOLS[0].symbol) {
-            setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
+        
+        let newSelectedSymbolCandidate: Symbol | undefined = undefined;
+        if (watchlistSymbols.length > 0) {
+          newSelectedSymbolCandidate = watchlistSymbols[0];
+        } else if (ALL_AVAILABLE_SYMBOLS.length > 0) {
+          newSelectedSymbolCandidate = ALL_AVAILABLE_SYMBOLS[0];
+        }
+
+        if (newSelectedSymbolCandidate && selectedSymbol?.symbol !== newSelectedSymbolCandidate.symbol) {
+          if (!isLoading) setIsSymbolLoading(true);
+          setSelectedSymbol(newSelectedSymbolCandidate);
+          setSearchParams({ symbol: newSelectedSymbolCandidate.symbol });
         }
       }
     }
-  }, [searchParams, toast, selectedSymbol.symbol, watchlistSymbols]); // Added dependencies
+  }, [searchParams, toast, selectedSymbol?.symbol, watchlistSymbols, isLoading, setSearchParams, ALL_AVAILABLE_SYMBOLS]);
 
 
   // Update selectedSymbol if it's removed from watchlist or watchlist becomes empty
@@ -117,6 +137,9 @@ const DashboardPage = () => {
     );
 
     if (foundSymbol) {
+      if (selectedSymbol.symbol !== foundSymbol.symbol) {
+        if (!isLoading) setIsSymbolLoading(true);
+      }
       setSelectedSymbol(foundSymbol);
       setSearchParams({ symbol: foundSymbol.symbol });
       if (isMobile) {
@@ -133,8 +156,11 @@ const DashboardPage = () => {
   };
 
   const handleSelectSymbolFromWatchlist = (symbol: Symbol) => {
+    if (selectedSymbol.symbol !== symbol.symbol) {
+      if (!isLoading) setIsSymbolLoading(true);
+    }
     setSelectedSymbol(symbol);
-    setSearchParams({ symbol: symbol.symbol }); // Update URL
+    setSearchParams({ symbol: symbol.symbol });
     if (isMobile) { 
       setShowWatchlistPanel(false);
     }
@@ -153,6 +179,7 @@ const DashboardPage = () => {
     setWatchlistSymbols(prev => {
       const newWatchlist = prev.filter(s => s.symbol !== symbolToRemove.symbol);
       if (selectedSymbol.symbol === symbolToRemove.symbol) {
+        if (!isLoading) setIsSymbolLoading(true); // Trigger loader as symbol will change
         if (newWatchlist.length > 0) {
           setSelectedSymbol(newWatchlist[0]);
           setSearchParams({ symbol: newWatchlist[0].symbol });
@@ -160,7 +187,8 @@ const DashboardPage = () => {
           setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
           setSearchParams({ symbol: ALL_AVAILABLE_SYMBOLS[0].symbol });
         } else {
-          // No symbols left
+          // No symbols left, handle appropriately (e.g., clear selectedSymbol)
+          // For now, relying on existing logic or future handling for empty ALL_AVAILABLE_SYMBOLS
         }
       }
       return newWatchlist;
@@ -168,11 +196,14 @@ const DashboardPage = () => {
     toast({ title: "Removed from Watchlist", description: `${symbolToRemove.symbol} has been removed.` });
   };
 
-  if (isLoading) {
+  if (isLoading || isSymbolLoading) { // Show loader if initial loading OR symbol switching
     return <DashboardLoader />;
   }
 
   return (
+    // ... keep existing code (JSX for the entire page structure: header, main content, panels, etc.)
+    // No changes to the JSX structure itself are needed for this feature.
+    // The loader is conditionally rendered before this return statement.
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
       <header className="border-b border-border py-2 px-4 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0 sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
@@ -180,7 +211,7 @@ const DashboardPage = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="mr-2">
             <Home className="h-5 w-5" />
           </Button>
-          <ChartCandlestick className="h-6 w-6 mr-2 text-primary" /> {/* Adjusted logo size slightly */}
+          <ChartCandlestick className="h-6 w-6 mr-2 text-primary" />
           <h1 className="text-xl font-bold">
             <span className="text-primary">StockTrader</span>
             <span className="text-sky-400"> AI</span>
@@ -199,7 +230,7 @@ const DashboardPage = () => {
             className={`transition-all duration-300 ease-in-out border-border p-2 md:p-4 flex flex-col
               ${isMobile
                 ? showWatchlistPanel ? 'w-full order-1 h-1/2 md:h-auto border-b' : 'hidden' 
-                : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r h-auto' : 'w-[50px] border-r' // ensure h-auto for desktop
+                : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r h-auto' : 'w-[50px] border-r'
               }`}
           >
             {showWatchlistPanel || !isMobile ? ( 
@@ -267,7 +298,7 @@ const DashboardPage = () => {
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-2 left-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
+              className="absolute top-2 left-2 z-20 bg-background/80 backdrop-blur-sm border-border"
               onClick={() => {setShowWatchlistPanel(true); setShowSidebar(false);}}
               aria-label="Open watchlist panel"
             >
@@ -283,7 +314,7 @@ const DashboardPage = () => {
             className={`transition-all duration-300 ease-in-out border-border
               ${isMobile
                 ? showSidebar ? 'w-full order-3 p-2 md:p-4 border-t h-1/2 md:h-auto' : 'hidden'
-                : showSidebar ? 'w-[280px] md:w-[300px] opacity-100 p-4 border-l h-auto' : 'w-0 opacity-0 overflow-hidden' // ensure h-auto for desktop
+                : showSidebar ? 'w-[280px] md:w-[300px] opacity-100 p-4 border-l h-auto' : 'w-0 opacity-0 overflow-hidden'
               }`}
           >
             {showSidebar && selectedSymbol && (
@@ -317,7 +348,7 @@ const DashboardPage = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm border-border"
             onClick={() => setShowSidebar(!showSidebar)}
             aria-label={showSidebar ? "Hide details sidebar" : "Show details sidebar"}
           >
@@ -329,7 +360,7 @@ const DashboardPage = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute top-2 right-2 z-20 bg-background/80 backdrop-blur-sm border-border" // Ensure border consistency
+            className="absolute top-2 right-2 z-20 bg-background/80 backdrop-blur-sm border-border"
             onClick={() => {setShowSidebar(true); setShowWatchlistPanel(false);}}
             aria-label="Show details panel"
           >
