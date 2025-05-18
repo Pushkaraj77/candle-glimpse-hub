@@ -20,6 +20,9 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/components/ui/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { predictStock } from "@/api/api";
+import { set } from "date-fns";
+import ScreenLoader from "@/components/ui/screenloader";
 
 // Renamed to ALL_AVAILABLE_SYMBOLS and serves as the master list of all possible symbols
 const ALL_AVAILABLE_SYMBOLS: Symbol[] = [
@@ -38,6 +41,11 @@ const DashboardPage = () => {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams(); // For reading URL query
   const navigate = useNavigate(); // For navigation
+  const [chartData, setChartData] = useState<any>(null);
+  const [quoteData, setQuoteData] = useState<any>(null);
+  const [predictedData, setPredictedData] = useState<any>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [watchlistSymbols, setWatchlistSymbols] = useState<Symbol[]>(() => {
     return ALL_AVAILABLE_SYMBOLS.slice(0, 2);
@@ -96,6 +104,33 @@ const DashboardPage = () => {
       setSelectedSymbol(ALL_AVAILABLE_SYMBOLS[0]);
     }
   }, [watchlistSymbols, selectedSymbol?.symbol]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (selectedSymbol) {
+        setIsLoading(true);
+        try {
+          const data = await predictStock(selectedSymbol.symbol);
+          if (data) {
+            console.log(data);
+            setChartData(data.chartData);
+            setQuoteData(data.quoteData);
+            setPredictedData(data.prediction.predictedPrices);
+          }
+        } catch (error) {
+          console.error("Error fetching data for symbol:", selectedSymbol.symbol, error);
+          toast({
+            variant: "destructive",
+            title: "Error Fetching Data",
+            description: `Could not fetch data for symbol "${selectedSymbol.symbol}".`,
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchData();
+  }, [selectedSymbol]);
 
 
   const handleSearch = (query: string) => {
@@ -160,6 +195,7 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      {isLoading && <ScreenLoader />}
       {/* Header */}
       <header className="border-b border-border py-2 px-4 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0 sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
         <div className="flex items-center self-start md:self-center">
@@ -260,7 +296,7 @@ const DashboardPage = () => {
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          {selectedSymbol && <ChartContainer symbol={selectedSymbol.symbol} />}
+          {selectedSymbol && <ChartContainer symbol={selectedSymbol.symbol} chartData={chartData} quoteData={quoteData} predictedData={predictedData}/>}
         </div>
 
         {/* Right Panel (Details) */}
@@ -287,11 +323,19 @@ const DashboardPage = () => {
                   </Button>
               </div>
               <SymbolDetail
-                symbol={selectedSymbol.symbol}
-                name={selectedSymbol.name}
-                price={selectedSymbol.price}
-                change={selectedSymbol.change}
-                changePercent={selectedSymbol.changePercent}
+                symbol={quoteData?.symbol || selectedSymbol.symbol}
+                name={quoteData?.name || selectedSymbol.name}
+                price={quoteData?.price || selectedSymbol.price}
+                change={quoteData?.change || selectedSymbol.change}
+                changePercent={quoteData?.changePercent || selectedSymbol.changePercent}
+                high52w={Number(quoteData?.high52w) || 0}
+                low52w={quoteData?.low52w || 0}
+                marketCap={quoteData?.marketCap || 0}
+                peRatio={quoteData?.peRatio || 0}
+                dividendYield={quoteData?.dividendYield || 0}
+                volume={quoteData?.volume || 0}
+                avgVolume={quoteData?.avgVolume || 0}
+                beta={quoteData?.beta || 0}
               />
               </>
             )}

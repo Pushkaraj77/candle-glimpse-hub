@@ -13,7 +13,7 @@ import {
   Bar,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { CandlestickInterval } from "@/types";
+import { CandlestickInterval, ChartType, QuoteType } from "@/types";
 
 const CHART_ID = "candlestick-chart"; // Define chart ID for ApexCharts API
 
@@ -29,95 +29,60 @@ const getCandleStepMs = (interval: string): number => {
 const generateMockCandlestickData = (
   numCandles: number,
   symbol: string,
-  candlestickIntervalStr: string
+  candlestickIntervalStr: string,
+  chartData: ChartType[] = [],
+  predictedData: number[] = []
 ) => {
-  const data = [];
+  const data: Array<{
+    date: Date;
+    open: number;
+    close: number;
+    high: number;
+    low: number;
+    volume: number;
+    prediction: number | null;
+  }> = [];
 
-  let initialSeed = 1;
-  for (let i = 0; i < symbol.length; i++) {
-    initialSeed =
-      (initialSeed * 31 + symbol.charCodeAt(i) + (i + 1) * 7) & 0xffffffff;
-  }
+  if (!chartData) return data;
+  const predictionCount = 5;
+  const chartLength = chartData.length;
 
-  const intervalSeedPart =
-    candlestickIntervalStr === "15m"
-      ? 15
-      : candlestickIntervalStr === "30m"
-      ? 30
-      : candlestickIntervalStr === "1h"
-      ? 60
-      : candlestickIntervalStr === "4h"
-      ? 240
-      : candlestickIntervalStr === "1d"
-      ? 1440
-      : 1; // Added default for safety
-  initialSeed = (initialSeed * intervalSeedPart) & 0xffffffff;
-
-  let basePrice = 100 + (initialSeed % 150);
-  if (basePrice < 50) basePrice = 50 + (initialSeed % 50);
-  if (basePrice > 250) basePrice = 200 + (initialSeed % 50);
-
-  let currentSeed = initialSeed;
-  function seededRandom() {
-    currentSeed = (1664525 * currentSeed + 1013904223) & 0xffffffff;
-    return currentSeed / 0xffffffff;
-  }
-
-  const intervalVolatilityFactor =
-    candlestickIntervalStr === "15m"
-      ? 0.3 // Reduced further for shorter intervals
-      : candlestickIntervalStr === "30m"
-      ? 0.4
-      : candlestickIntervalStr === "1h"
-      ? 0.5
-      : candlestickIntervalStr === "4h"
-      ? 0.7
-      : 1.0;
-
-  const candleStepMsValue = getCandleStepMs(candlestickIntervalStr);
-
-  for (let i = 0; i < numCandles; i++) {
-    const volatility = (seededRandom() * 3 + 1.0) * intervalVolatilityFactor; // Adjusted base volatility
-    const trend = seededRandom() - 0.49;
-
-    const open = basePrice;
-    let close = basePrice + trend * volatility;
-    if (close <= 0.1) close = open * (0.95 + seededRandom() * 0.1);
-
-    const highRoll = seededRandom();
-    const lowRoll = seededRandom();
-
-    let high = Math.max(open, close) + highRoll * volatility * 0.5; // Adjusted impact
-    let low = Math.min(open, close) - lowRoll * volatility * 0.5; // Adjusted impact
-
-    if (low <= 0.1) low = Math.min(open, close) * 0.9;
-    if (high <= low) high = low + 0.01;
-
-    const volume = Math.floor(seededRandom() * 10000000) + 1000000;
-
-    // Calculate date based on candle index and interval step
-    const timestamp = Date.now() - (numCandles - 1 - i) * candleStepMsValue;
-    const candleDate = new Date(timestamp);
-
-    const isPredictionCandle =
-      i >= numCandles - Math.min(5, Math.floor(numCandles * 0.1)); // Predict last 5 or 10%
-
+  // Add all original candles with prediction: null
+  chartData.forEach((item) => {
     data.push({
-      date: candleDate,
-      open: parseFloat(open.toFixed(2)),
-      close: parseFloat(close.toFixed(2)),
-      high: parseFloat(high.toFixed(2)),
-      low: parseFloat(low.toFixed(2)),
-      volume,
-      prediction: isPredictionCandle
-        ? parseFloat((close + (seededRandom() - 0.3) * volatility).toFixed(2))
-        : null,
+      date: new Date(item.time),
+      open: parseFloat(item.open?.toFixed(2)),
+      close: parseFloat(item.close?.toFixed(2)),
+      high: parseFloat(item.high?.toFixed(2)),
+      low: parseFloat(item.low?.toFixed(2)),
+      volume: item.volume,
+      prediction: null,
     });
+  });
 
-    basePrice = close;
-    if (basePrice <= 0.1) basePrice = (initialSeed % 10) + 1;
+  // Add 5 prediction points (not candles) after the last candle
+  if (predictedData && predictedData.length >= predictionCount && chartData.length > 0) {
+    const lastCandle = chartData[chartLength - 1];
+    const lastDate = new Date(lastCandle.time);
+    const candleStepMs = getCandleStepMs(candlestickIntervalStr);
+    let lastClose = lastCandle.close;
+
+    for (let i = 0; i < predictionCount; i++) {
+      const predValue = predictedData[i];
+      const predDate = new Date(lastDate.getTime() + candleStepMs * (i + 1));
+      // For line chart, keep open/high/low/close as last known close to avoid scale issues
+      data.push({
+        date: predDate,
+        open: lastClose,
+        close: lastClose,
+        high: lastClose,
+        low: lastClose,
+        volume: 0,
+        prediction: parseFloat(predValue?.toFixed(2)),
+      });
+      lastClose = parseFloat(predValue?.toFixed(2)) || lastClose;
+    }
   }
-
   return data;
 };
 
@@ -126,52 +91,56 @@ interface PriceChartProps {
   interval: string; 
   chartType: "candlestick" | "line";
   candlestickInterval: string; // Added prop
+  chartData?: Array<ChartType>;
+  quoteData?: QuoteType;
+  predictedData?: Array<number>;
 }
 
-const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
+const PriceChart = ({ symbol, interval, chartType, chartData, quoteData, predictedData }: PriceChartProps) => {
   const [candlestickInterval, setCandlestickInterval] = useState<string>("1h"); // Default candlestick duration
   const [data, setData] = useState(() =>
-    generateMockCandlestickData(100, symbol, candlestickInterval)
+    generateMockCandlestickData(100, symbol, candlestickInterval, chartData, predictedData)
   );
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
 
   useEffect(() => {
-    const candlestickIntervalMinutes =
-      {
-        "15m": 15,
-        "30m": 30,
-        "1h": 60,
-        "4h": 240,
-        "1d": 1440,
-      }[candlestickInterval] || 60;
 
-    const overallIntervalDays =
-      {
-        "1d": 1,
-        "1w": 7,
-        "1m": 30,
-        //  "3m": 90, "6m": 180, "1y": 365, "5y": 365 * 5,
-      }[interval] || 30;
-
-    const totalDurationMinutes = overallIntervalDays * 24 * 60;
-    let numberOfCandles = Math.floor(
-      totalDurationMinutes / candlestickIntervalMinutes
-    );
-
-    numberOfCandles = Math.max(1, numberOfCandles);
-    numberOfCandles = Math.min(1000, numberOfCandles);
-
-    const newMockData = generateMockCandlestickData(
-      numberOfCandles,
-      symbol,
-      candlestickInterval
-    );
-    setData(newMockData);
-
-    if (newMockData.length > 0) {
-      setCurrentPrice(newMockData[newMockData.length - 1].close);
+    if ( chartData && chartData.length > 0) {
+      const candlestickIntervalMinutes =
+        {
+  
+          "5m": 5,
+          "10m": 10,
+          "15m": 15,
+          "30m": 30,
+          "1h": 60,
+        }[candlestickInterval] || 60;
+  
+      const overallIntervalDays =
+        {
+          "1d": 1,
+          "1w": 7,
+          "1m": 30,
+          //  "3m": 90, "6m": 180, "1y": 365, "5y": 365 * 5,
+        }[interval] || 30;
+  
+      const totalDurationMinutes = overallIntervalDays * 24 * 60;
+      let numberOfCandles = Math.floor(
+        totalDurationMinutes / candlestickIntervalMinutes
+      );
+      const newMockData = generateMockCandlestickData(
+        numberOfCandles,
+        symbol,
+        candlestickInterval,
+        chartData,
+        predictedData // Pass predictedData here
+      );
+  
+      console.log("newMockData", newMockData);
+      setData(newMockData);
+  
     }
-  }, [symbol, interval, candlestickInterval]); // candlestickInterval is now a prop
+  }, [symbol, interval, candlestickInterval, chartData]); // candlestickInterval is now a prop
 
   // Custom tooltip component for the Recharts (Line/Area chart)
   const CustomRechartsTooltip = ({ active, payload, label }: any) => {
@@ -307,11 +276,11 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
   };
 
   const candlestickIntervals: CandlestickInterval[] = [
-    { label: "15m", value: "15m" },
-    { label: "30m", value: "30m" },
-    { label: "1h", value: "1h" },
-    { label: "4h", value: "4h" },
-    { label: "1d", value: "1d" },
+    { label: "5m", value: "5m" },
+  // { label: "10m", value: "10m" },
+  // { label: "15m", value: "15m" },
+  // { label: "30m", value: "30m" },
+  // { label: "1h", value: "1h" },
   ];
 
   const apexCandlestickOptions: ApexCharts.ApexOptions = useMemo(
@@ -559,9 +528,9 @@ const PriceChart = ({ symbol, interval, chartType }: PriceChartProps) => {
     <div className="w-full h-full chart-container flex flex-col">
       <div className=" top-1 left-1 md:top-2 md:left-2 z-10">
         <h3 className="text-sm md:text-lg font-bold">{symbol}</h3>
-        {currentPrice !== null && (
+        {quoteData !== null && (
           <p className="text-lg md:text-2xl font-mono font-semibold">
-            ${currentPrice.toFixed(2)}
+            ${quoteData.price}
           </p>
         )}
         <p className="text-[0.6rem] md:text-xs text-muted-foreground">

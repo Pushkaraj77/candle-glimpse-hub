@@ -9,6 +9,14 @@ interface SymbolDetailProps {
   price: number;
   change: number;
   changePercent: number;
+  high52w : number,
+  low52w : number,
+  marketCap : number,
+  peRatio : number,
+  dividendYield : number,
+  volume : number,
+  avgVolume : number,
+  beta : number,
   additionalInfo?: {
     [key: string]: string | number;
   };
@@ -20,18 +28,26 @@ const SymbolDetail = ({
   price, 
   change, 
   changePercent,
+  high52w,
+  low52w,
+  marketCap,
+  peRatio,
+  dividendYield,
+  volume,
+  avgVolume,
+  beta,
   additionalInfo = {} 
 }: SymbolDetailProps) => {
   // Add mock data for additional metrics
   const mockData = {
-    "52W High": "$" + (price + 20).toFixed(2),
-    "52W Low": "$" + (price - 30).toFixed(2),
-    "Market Cap": "$" + (price * 1000000000 / 150).toFixed(2) + "B",
-    "P/E Ratio": (price / (price / 20)).toFixed(2),
-    "Dividend Yield": (2.5).toFixed(2) + "%",
-    "Volume": (Math.random() * 10000000 + 1000000).toFixed(0),
-    "Avg. Volume": (Math.random() * 15000000 + 2000000).toFixed(0),
-    "Beta": (1 + Math.random() * 0.5).toFixed(2),
+    "52W High": "$" + high52w,
+    "52W Low": "$" + low52w,
+    "Market Cap": "$" + marketCap + "B",
+    "P/E Ratio": peRatio,
+    "Dividend Yield": dividendYield + "%",
+    "Volume": volume,
+    "Avg. Volume": avgVolume,
+    "Beta": beta,
     ...additionalInfo
   };
 

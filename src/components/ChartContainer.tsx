@@ -3,17 +3,21 @@ import PriceChart from "./PriceChart";
 import TimeSelector from "./TimeSelector";
 import { Toggle } from "@/components/ui/toggle";
 import { Button } from "@/components/ui/button";
-import { 
-  ChartCandlestick, 
-  ChartLine, 
+import {
+  ChartCandlestick,
+  ChartLine,
   // ZoomIn, ZoomOut, Move, Home are removed as they are no longer used here
 } from "lucide-react";
-import { CandlestickInterval } from "@/types"; // Assuming CandlestickInterval type is defined in types.ts
+import { CandlestickInterval, ChartType, QuoteType } from "@/types"; // Assuming CandlestickInterval type is defined in types.ts
+
+
 
 interface ChartContainerProps {
   symbol: string;
+  chartData?: Array<ChartType>;
+  quoteData?: QuoteType;
+  predictedData?: Array<number>;
 }
-
 // Define candlestickIntervals here or import if they are shared
 const candlestickIntervals: CandlestickInterval[] = [
   { label: "15m", value: "15m" },
@@ -23,10 +27,13 @@ const candlestickIntervals: CandlestickInterval[] = [
   { label: "1d", value: "1d" },
 ];
 
-const ChartContainer = ({ symbol }: ChartContainerProps) => {
-  const [interval, setInterval] = useState("1m"); // Overall time interval (1D, 1W etc)
-  const [chartType, setChartType] = useState<"candlestick" | "line">("candlestick");
-  const [candlestickChartInterval, setCandlestickChartInterval] = useState<string>("1h"); // Candlestick interval (15m, 1h etc)
+const ChartContainer = ({ symbol, chartData, quoteData, predictedData }: ChartContainerProps) => {
+  const [interval, setInterval] = useState("1d"); // Overall time interval (1D, 1W etc)
+  const [chartType, setChartType] = useState<"candlestick" | "line">(
+    "candlestick"
+  );
+  const [candlestickChartInterval, setCandlestickChartInterval] =
+    useState<string>("5m"); // Candlestick interval (15m, 1h etc)
 
   // Placeholder functions for zoom/pan are removed.
   // const handleZoomIn = () => console.log("Zoom In");
@@ -67,7 +74,7 @@ const ChartContainer = ({ symbol }: ChartContainerProps) => {
             onIntervalSelect={setInterval}
           />
         </div>
-        
+
         {/* Separator (optional) */}
         <div className="h-6 w-px bg-border hidden sm:block mx-1"></div>
 
@@ -90,11 +97,14 @@ const ChartContainer = ({ symbol }: ChartContainerProps) => {
 
       {/* Price Chart */}
       <div className="flex-1 min-h-0 max-h-screen">
-        <PriceChart 
-          symbol={symbol} 
-          interval={interval} 
-          chartType={chartType} 
+        <PriceChart
+          symbol={symbol}
+          interval={interval}
+          chartType={chartType}
           candlestickInterval={candlestickChartInterval} // Pass the new prop
+          chartData={chartData} 
+          quoteData={quoteData}
+          predictedData={predictedData}
         />
       </div>
     </div>
