@@ -166,8 +166,11 @@ const DashboardPage = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="mr-2">
             <Home className="h-5 w-5" />
           </Button>
-          <ChartCandlestick className="h-6 w-6 mr-2 text-primary" />
-          <h1 className="text-xl font-bold">StockVision AI Dashboard</h1>
+          <ChartCandlestick className="h-7 w-7 mr-2 text-primary" />
+          <h1 className="text-xl font-bold">
+            <span className="text-primary">StockVision</span>
+            <span className="text-sky-400"> AI Dashboard</span>
+          </h1>
         </div>
         <div className="w-full md:w-[300px]">
           <SearchBar onSearch={handleSearch} />
@@ -183,7 +186,7 @@ const DashboardPage = () => {
               ${isMobile
                 ? showWatchlistPanel ? 'w-full order-1 h-1/2 md:h-auto border-b' : 'hidden' 
                 : showWatchlistPanel ? 'w-[280px] md:w-[300px] border-r' : 'w-[50px] border-r' 
-              }`} // Adjusted width for better consistency
+              }`}
           >
             {showWatchlistPanel || !isMobile ? ( 
               <>
@@ -199,19 +202,19 @@ const DashboardPage = () => {
                   </Button>
                 </div>
                 {showWatchlistPanel && (
-                  <div className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1"> {/* Added pr-1 for scrollbar space */}
+                  <div className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1">
                     <SymbolList 
                       symbols={watchlistSymbols} 
                       onSelectSymbol={handleSelectSymbolFromWatchlist}
                       onRemoveSymbol={handleRemoveFromWatchlist}
-                      selectedSymbolValue={selectedSymbol?.symbol} // Added optional chaining
+                      selectedSymbolValue={selectedSymbol?.symbol}
                     />
                     <Collapsible
                       open={isAllSymbolsOpen}
                       onOpenChange={setIsAllSymbolsOpen}
-                      className="bg-secondary/50 rounded-md overflow-hidden flex-1 flex flex-col min-h-0" // Slightly less opaque
+                      className="bg-secondary/50 rounded-md overflow-hidden flex-1 flex flex-col min-h-0"
                     >
-                      <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/50 rounded-t-md"> {/* rounded-t-md */}
+                      <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/50 rounded-t-md">
                         <span className="font-medium text-sm md:text-base">All Market Symbols</span>
                         {isAllSymbolsOpen ? (
                           <ChevronUp className="h-4 w-4" />
@@ -219,7 +222,7 @@ const DashboardPage = () => {
                           <ChevronDown className="h-4 w-4" />
                         )}
                       </CollapsibleTrigger>
-                      <CollapsibleContent className="flex-1 overflow-y-auto min-h-0 p-1"> {/* Added padding */}
+                      <CollapsibleContent className="flex-1 overflow-y-auto min-h-0 p-2">
                         <AllSymbolsList
                           allSymbols={ALL_AVAILABLE_SYMBOLS}
                           watchlistSymbols={watchlistSymbols}
