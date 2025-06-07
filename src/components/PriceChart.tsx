@@ -97,7 +97,7 @@ interface PriceChartProps {
 }
 
 const PriceChart = ({ symbol, interval, chartType, chartData, quoteData, predictedData }: PriceChartProps) => {
-  const [candlestickInterval, setCandlestickInterval] = useState<string>("1h"); // Default candlestick duration
+  const [candlestickInterval, setCandlestickInterval] = useState<string>("5m"); // Default candlestick duration
   const [data, setData] = useState(() =>
     generateMockCandlestickData(100, symbol, candlestickInterval, chartData, predictedData)
   );
@@ -371,7 +371,7 @@ const PriceChart = ({ symbol, interval, chartType, chartData, quoteData, predict
             colors: "#94a3b8",
             fontSize: "8px",
           },
-          formatter: (value: number) => `$${value.toFixed(2)}`,
+          formatter: (value: number) => `INR ${value.toFixed(2)}`,
         },
         axisBorder: {
           show: true,
@@ -530,7 +530,7 @@ const PriceChart = ({ symbol, interval, chartType, chartData, quoteData, predict
         <h3 className="text-sm md:text-lg font-bold">{symbol}</h3>
         {quoteData !== null && (
           <p className="text-lg md:text-2xl font-mono font-semibold">
-            ${quoteData.price}
+            INR {quoteData.price}
           </p>
         )}
         <p className="text-[0.6rem] md:text-xs text-muted-foreground">
@@ -655,7 +655,7 @@ const PriceChart = ({ symbol, interval, chartType, chartData, quoteData, predict
                   stroke="#94a3b8"
                   strokeDasharray="2 2"
                   label={{
-                    value: `$${currentPrice.toFixed(2)}`,
+                    value: `INR ${currentPrice.toFixed(2)}`,
                     position: "right",
                     fill: "#94a3b8",
                     fontSize: 8,

@@ -40,9 +40,9 @@ const SymbolDetail = ({
 }: SymbolDetailProps) => {
   // Add mock data for additional metrics
   const mockData = {
-    "52W High": "$" + high52w,
-    "52W Low": "$" + low52w,
-    "Market Cap": "$" + marketCap + "B",
+    "52W High": "INR " + high52w,
+    "52W Low": "INR " + low52w,
+    "Market Cap": "INR " + marketCap + "B",
     "P/E Ratio": peRatio,
     "Dividend Yield": dividendYield + "%",
     "Volume": volume,
@@ -69,7 +69,7 @@ const SymbolDetail = ({
       </CardHeader>
       <CardContent>
         <div className="mb-4">
-          <div className="text-3xl font-mono font-semibold">${price.toFixed(2)}</div>
+          <div className="text-3xl font-mono font-semibold">INR {price.toFixed(2)}</div>
           <div 
             className={`flex items-center text-sm font-mono ${change >= 0 ? 'trend-up' : 'trend-down'}`}
           >

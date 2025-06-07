@@ -26,14 +26,17 @@ import ScreenLoader from "@/components/ui/screenloader";
 
 // Renamed to ALL_AVAILABLE_SYMBOLS and serves as the master list of all possible symbols
 const ALL_AVAILABLE_SYMBOLS: Symbol[] = [
-  { symbol: "AAPL", name: "Apple Inc.", price: 184.92, change: 0.65, changePercent: 0.35 },
-  { symbol: "MSFT", name: "Microsoft Corporation", price: 406.87, change: -2.13, changePercent: -0.52 },
-  { symbol: "GOOGL", name: "Alphabet Inc.", price: 147.60, change: 1.36, changePercent: 0.93 },
-  { symbol: "AMZN", name: "Amazon.com Inc.", price: 178.75, change: -1.05, changePercent: -0.58 },
-  { symbol: "TSLA", name: "Tesla, Inc.", price: 177.80, change: 2.30, changePercent: 1.31 },
-  { symbol: "META", name: "Meta Platforms, Inc.", price: 476.28, change: -3.72, changePercent: -0.77 },
-  { symbol: "NVDA", name: "NVIDIA Corporation", price: 900.50, change: 10.20, changePercent: 1.15 },
-  { symbol: "JPM", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
+  { symbol: "TATASTEEL.NS", name: "Apple Inc.", price: 184.92, change: 0.65, changePercent: 0.35 },
+  { symbol: "POWERGRID.NS", name: "Microsoft Corporation", price: 406.87, change: -2.13, changePercent: -0.52 },
+  { symbol: "HDFCBANK.NS", name: "Alphabet Inc.", price: 147.60, change: 1.36, changePercent: 0.93 },
+  { symbol: "SBI.NS", name: "Amazon.com Inc.", price: 178.75, change: -1.05, changePercent: -0.58 },
+  { symbol: "INFO.NS", name: "Tesla, Inc.", price: 177.80, change: 2.30, changePercent: 1.31 },
+  { symbol: "ITC.NS", name: "Meta Platforms, Inc.", price: 476.28, change: -3.72, changePercent: -0.77 },
+  { symbol: "TCS.NS", name: "NVIDIA Corporation", price: 900.50, change: 10.20, changePercent: 1.15 },
+  { symbol: "PERSISTENT.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
+  { symbol: "ICICIBANK.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
+  { symbol: "TITAN.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
+  { symbol: "ASIANPAINT.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
 ];
 
 const DashboardPage = () => {

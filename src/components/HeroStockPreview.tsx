@@ -4,9 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { BarChartBig, TrendingUp } from "lucide-react";
 
 const mockStocks = [
-  { symbol: "AAPL", name: "Apple Inc.", price: "$178.72", change: "+1.32%", changeColor: "text-positive" },
-  { symbol: "MSFT", name: "Microsoft Corp.", price: "$375.68", change: "+1.14%", changeColor: "text-positive" },
-  { symbol: "TSLA", name: "Tesla Inc.", price: "$248.48", change: "+2.33%", changeColor: "text-positive" },
+  { symbol: "RELIANCE.NS", name: "Apple Inc.", price: "INR 178.72", change: "+1.32%", changeColor: "text-positive" },
+  { symbol: "HDFCBANK.NS", name: "Microsoft Corp.", price: "INR 375.68", change: "+1.14%", changeColor: "text-positive" },
+  { symbol: "SBI.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  { symbol: "INFO.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "ITC.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "TCS.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "PERSISTENT.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "ICICIBANK.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "TITAN.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  { symbol: "ASIANPAINT.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
 ];
 
 const HeroStockPreview = () => {
@@ -42,7 +49,7 @@ const HeroStockPreview = () => {
         <div className="p-3 bg-background/30 rounded-md">
           <p className="text-xs font-medium text-muted-foreground mb-1">PREDICTION</p>
           <p className="text-sm text-foreground font-semibold">
-            AAPL to reach $183.25 next week
+            AAPL to reach INR 183.25 next week
           </p>
           <div className="flex items-center justify-between mt-1">
             <p className="text-sm text-positive font-medium">+2.54% <span className="text-xs text-muted-foreground">from current price</span></p>
