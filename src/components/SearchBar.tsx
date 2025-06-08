@@ -6,16 +6,16 @@ import SearchSuggestions from "./SearchSuggestions";
 
 // Mock data for suggestions - in a real app, this would come from an API
 const mockSymbols = [
-  { symbol: "RELIANCE.NS", name: "Apple Inc." },
-  { symbol: "HDFCBANK.NS", name: "Microsoft Corporation" },
-  { symbol: "SBI.NS", name: "Alphabet Inc." },
-  { symbol: "INFO.NS", name: "Amazon.com Inc." },
-  { symbol: "ITC.NS", name: "Meta Platforms, Inc." },
-  { symbol: "TCS.NS", name: "NVIDIA Corporation" },
-  { symbol: "PERSISTENT.NS", name: "JPMorgan Chase & Co."},
-  { symbol: "ICICIBANK.NS", name: "Tesla, Inc."},
-  { symbol: "TITAN.NS", name: "Tesla, Inc."},
-  { symbol: "ASIANPAINT.NS", name: "Tesla, Inc."},
+  { symbol: "RELIANCE.NS", name: "Reliance Industries" },
+  { symbol: "HDFCBANK.NS", name: "HDFC Bank" },
+  { symbol: "SBI.NS", name: "State Bank of India" },
+  { symbol: "INFO.NS", name: "Infosys" },
+  { symbol: "ITC.NS", name: "ITC Limited" },
+  { symbol: "TCS.NS", name: "Tata Consultancy Services" },
+  { symbol: "PERSISTENT.NS", name: "Persistent Systems" },
+  { symbol: "ICICIBANK.NS", name: "ICICI Bank" },
+  { symbol: "TITAN.NS", name: "Titan Company" },
+  { symbol: "ASIANPAINT.NS", name: "Asian Paints" },
 ];
 
 interface SearchBarProps {

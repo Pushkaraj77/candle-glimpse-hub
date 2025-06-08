@@ -4,16 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { BarChartBig, TrendingUp } from "lucide-react";
 
 const mockStocks = [
-  { symbol: "RELIANCE.NS", name: "Apple Inc.", price: "INR 178.72", change: "+1.32%", changeColor: "text-positive" },
-  { symbol: "HDFCBANK.NS", name: "Microsoft Corp.", price: "INR 375.68", change: "+1.14%", changeColor: "text-positive" },
-  { symbol: "SBI.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
-  { symbol: "INFO.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
-  // { symbol: "ITC.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
-  // { symbol: "TCS.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
-  // { symbol: "PERSISTENT.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
-  // { symbol: "ICICIBANK.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
-  // { symbol: "TITAN.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
-  { symbol: "ASIANPAINT.NS", name: "Tesla Inc.", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  { symbol: "RELIANCE.NS", name: "Reliance Industries", price: "INR 178.72", change: "+1.32%", changeColor: "text-positive" },
+  { symbol: "HDFCBANK.NS", name: "HDFC Bank", price: "INR 375.68", change: "+1.14%", changeColor: "text-positive" },
+  { symbol: "SBI.NS", name: "State Bank of India", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  { symbol: "INFO.NS", name: "Infosys", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "ITC.NS", name: "ITC Limited", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "TCS.NS", name: "Tata Consultancy Services", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "PERSISTENT.NS", name: "Persistent Systems", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "ICICIBANK.NS", name: "ICICI Bank", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  // { symbol: "TITAN.NS", name: "Titan Company", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
+  { symbol: "ASIANPAINT.NS", name: "Asian Paints", price: "INR 248.48", change: "+2.33%", changeColor: "text-positive" },
 ];
 
 const HeroStockPreview = () => {

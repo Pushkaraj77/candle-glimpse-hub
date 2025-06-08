@@ -26,17 +26,17 @@ import ScreenLoader from "@/components/ui/screenloader";
 
 // Renamed to ALL_AVAILABLE_SYMBOLS and serves as the master list of all possible symbols
 const ALL_AVAILABLE_SYMBOLS: Symbol[] = [
-  { symbol: "TATASTEEL.NS", name: "Apple Inc.", price: 184.92, change: 0.65, changePercent: 0.35 },
-  { symbol: "POWERGRID.NS", name: "Microsoft Corporation", price: 406.87, change: -2.13, changePercent: -0.52 },
-  { symbol: "HDFCBANK.NS", name: "Alphabet Inc.", price: 147.60, change: 1.36, changePercent: 0.93 },
-  { symbol: "SBI.NS", name: "Amazon.com Inc.", price: 178.75, change: -1.05, changePercent: -0.58 },
-  { symbol: "INFO.NS", name: "Tesla, Inc.", price: 177.80, change: 2.30, changePercent: 1.31 },
-  { symbol: "ITC.NS", name: "Meta Platforms, Inc.", price: 476.28, change: -3.72, changePercent: -0.77 },
-  { symbol: "TCS.NS", name: "NVIDIA Corporation", price: 900.50, change: 10.20, changePercent: 1.15 },
-  { symbol: "PERSISTENT.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
-  { symbol: "ICICIBANK.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
-  { symbol: "TITAN.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
-  { symbol: "ASIANPAINT.NS", name: "JPMorgan Chase & Co.", price: 190.75, change: -0.50, changePercent: -0.26 },
+  { symbol: "RELIANCE.NS", name: "Reliance Industries Ltd.", price: 2840.00, change: 15.00, changePercent: 0.53 },
+  { symbol: "POWERGRID.NS", name: "Power Grid Corporation of India Ltd.", price: 295.00, change: -2.00, changePercent: -0.67 },
+  { symbol: "HDFCBANK.NS", name: "HDFC Bank Ltd.", price: 1620.00, change: 10.00, changePercent: 0.62 },
+  { symbol: "SBI.NS", name: "State Bank of India", price: 825.00, change: -5.00, changePercent: -0.60 },
+  { symbol: "INFY.NS", name: "Infosys Ltd.", price: 1450.00, change: 20.00, changePercent: 1.40 },
+  { symbol: "ITC.NS", name: "ITC Ltd.", price: 440.00, change: -3.00, changePercent: -0.68 },
+  { symbol: "TCS.NS", name: "Tata Consultancy Services Ltd.", price: 3900.00, change: 30.00, changePercent: 0.78 },
+  { symbol: "PERSISTENT.NS", name: "Persistent Systems Ltd.", price: 3700.00, change: -25.00, changePercent: -0.67 },
+  { symbol: "ICICIBANK.NS", name: "ICICI Bank Ltd.", price: 1100.00, change: 8.00, changePercent: 0.73 },
+  { symbol: "TITAN.NS", name: "Titan Company Ltd.", price: 3400.00, change: 12.00, changePercent: 0.35 },
+  { symbol: "ASIANPAINT.NS", name: "Asian Paints Ltd.", price: 2950.00, change: -10.00, changePercent: -0.34 },
 ];
 
 const DashboardPage = () => {
